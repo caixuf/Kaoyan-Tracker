@@ -1,4 +1,4 @@
-// 考研备考、AI 结对研伴与多用户 GitHub 仓库云存储系统 (Kaoyan-Tracker 4.0) 核心逻辑
+// 考研备考、AI 结对研伴与多用户 GitHub 仓库云存储系统 (Kaoyan-Tracker 4.0 纯净无 Emoji 版)
 
 const MOTIVATION_QUOTES = [
   { text: "把每一次攻克考点，当成一次系统功能上线。", author: "极客考研共勉" },
@@ -47,6 +47,12 @@ class KaoyanApp {
     this.startCountdown();
     this.initGitHubSync();
     this.render();
+  }
+
+  refreshIcons() {
+    if (window.lucide && window.lucide.createIcons) {
+      setTimeout(() => window.lucide.createIcons(), 10);
+    }
   }
 
   loadUsersList() {
@@ -157,6 +163,7 @@ class KaoyanApp {
       this.elements.userDropdownMenu.classList.add("hidden");
       this.elements.modalCreateUser.classList.remove("hidden");
       this.elements.modalCreateUser.classList.add("flex");
+      this.refreshIcons();
     });
 
     this.elements.btnCancelCreateUser.addEventListener("click", () => {
@@ -201,8 +208,8 @@ class KaoyanApp {
       const isCur = uname === this.currentUser;
       html += `
         <div class="flex items-center justify-between px-2 py-1.5 rounded-lg text-xs ${isCur ? 'bg-indigo-600/30 text-white font-bold' : 'text-gray-300 hover:bg-gray-800'} cursor-pointer group">
-          <span onclick="app.switchUser('${uname}')" class="flex-1 truncate">👤 ${uname}</span>
-          ${this.usersList.length > 1 && !isCur ? `<span onclick="app.deleteUser('${uname}')" class="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-300 px-1 text-[11px]" title="删除该用户">✕</span>` : ''}
+          <span onclick="app.switchUser('${uname}')" class="flex-1 truncate">${uname}</span>
+          ${this.usersList.length > 1 && !isCur ? `<span onclick="app.deleteUser('${uname}')" class="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-300 px-1 text-[11px]" title="删除该用户">[删除]</span>` : ''}
         </div>
       `;
     });
@@ -283,6 +290,7 @@ class KaoyanApp {
     } else {
       drawer.classList.toggle("translate-x-full");
     }
+    this.refreshIcons();
   }
 
   askAIWithPrompt(promptText) {
@@ -300,7 +308,7 @@ class KaoyanApp {
 
     const loadingId = "ai-loading-" + Date.now();
     this.appendChatMessage("ai", `<span id="${loadingId}" class="inline-flex items-center gap-1.5 text-purple-300">
-      <span class="animate-spin text-sm">✦</span> 正在深度思考并生成考研解答...
+      正在深度思考并生成考研解答...
     </span>`);
 
     try {
@@ -317,7 +325,7 @@ class KaoyanApp {
             messages: [
               {
                 role: "system",
-                content: "你是一位专业、耐心的顶级考研名师与AI结对研伴，精通计算机408（数据结构、计组、操作系统、计网）、考研数学（高数、线代、概率）、考研英语与思想政治。请用条理清晰、言简意赅、充满鼓励的方式回答用户的考研问题，格式使用易读的 Markdown。"
+                content: "你是一位专业、耐心的顶级考研名师与AI结对研伴，精通计算机408（数据结构、计组、操作系统、计网）、考研数学（高数、线代、概率）、考研英语与思想政治。请用条理清晰、言简意赅、充满严谨逻辑的方式回答用户的考研问题，格式使用易读的 Markdown，请勿在输出中使用任何 Emoji。"
               },
               { role: "user", content: text }
             ],
@@ -333,8 +341,7 @@ class KaoyanApp {
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
       } else {
-        // 本地离线启发式模拟研伴
-        reply = `### 💡 研伴思路解析\n针对您提出的问题：**「${text}」**\n\n1. **核心概念定位**：本问题属于考研高频重难点，命题人通常在此处设置反直觉选项或边界陷阱。\n2. **标准破局步骤**：先理清定义域/前置条件，然后应用标准套路展开推导。\n3. **学长建议**：建议将此题记录到【错题 Tracker】中，并在今晚复盘时重新手写一遍推导过程！✨`;
+        reply = `### 思路解析\n针对您提出的问题：**「${text}」**\n\n1. **核心概念定位**：本问题属于考研高频重难点，命题人通常在此处设置反直觉选项或边界陷阱。\n2. **标准破局步骤**：先理清定义域/前置条件，然后应用标准套路展开推导。\n3. **学长建议**：建议将此题记录到【错题 Tracker】中，并在今晚复盘时重新手写一遍推导过程！`;
       }
 
       const loadElem = document.getElementById(loadingId);
@@ -344,7 +351,7 @@ class KaoyanApp {
     } catch (err) {
       const loadElem = document.getElementById(loadingId);
       if (loadElem && loadElem.parentElement) {
-        loadElem.parentElement.innerHTML = `<span class="text-rose-400">调用 AI 失败 (${err.message})。请点击右上角 ⚙️ 检查您的 API Key 配置。</span>`;
+        loadElem.parentElement.innerHTML = `<span class="text-rose-400">调用 AI 失败 (${err.message})。请点击右上角设置图标检查您的 API Key 配置。</span>`;
       }
     }
   }
@@ -355,8 +362,8 @@ class KaoyanApp {
     msgDiv.className = `flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : ''}`;
     
     msgDiv.innerHTML = `
-      <div class="w-6 h-6 rounded-full ${isUser ? 'bg-indigo-600 text-white' : 'bg-purple-600/30 text-purple-300'} flex items-center justify-center shrink-0 text-xs font-bold">
-        ${isUser ? '👤' : '✨'}
+      <div class="w-6 h-6 rounded-full ${isUser ? 'bg-indigo-600 text-white' : 'bg-purple-600/30 text-purple-300'} flex items-center justify-center shrink-0 text-[10px] font-bold font-mono">
+        ${isUser ? 'ME' : 'AI'}
       </div>
       <div class="p-3 rounded-2xl ${isUser ? 'bg-indigo-600/30 text-indigo-100 border border-indigo-500/30' : 'bg-gray-900 border border-white/5 text-gray-200'} leading-relaxed max-w-[85%] markdown-body">
         ${isUser ? content : marked.parse(content)}
@@ -535,6 +542,7 @@ class KaoyanApp {
       document.getElementById("mistake-id-input").value = "";
       this.elements.modalMistake.classList.remove("hidden");
       this.elements.modalMistake.classList.add("flex");
+      this.refreshIcons();
     });
 
     this.elements.btnCancelMistake.addEventListener("click", () => {
@@ -617,7 +625,7 @@ class KaoyanApp {
         this.addSkillExp(this.currentStudyingPoint.subjectId, 50);
         this.elements.modalPointStudy.classList.add("hidden");
         this.elements.modalPointStudy.classList.remove("flex");
-        alert("🎉 考点研读完成！已为对应技能增加 +50 EXP 经验值！");
+        alert("考点研读完成！已为对应技能增加 +50 EXP 经验值！");
       }
     });
 
@@ -663,6 +671,7 @@ class KaoyanApp {
       this.renderUserDropdown();
       this.elements.modalGithubSync.classList.remove("hidden");
       this.elements.modalGithubSync.classList.add("flex");
+      this.refreshIcons();
     });
 
     this.elements.btnCloseGithubSync.addEventListener("click", () => {
@@ -763,9 +772,9 @@ class KaoyanApp {
         this.render();
 
         const timeStr = new Date().toLocaleTimeString();
-        this.elements.ghSyncStatusText.innerText = `[${this.currentUser}] 同步成功！`;
+        this.elements.ghSyncStatusText.innerText = `[${this.currentUser}] 同步成功！已是最新`;
         this.elements.ghLastSyncTime.innerText = timeStr;
-        if (showToast) alert(`🎉 成功从 GitHub 仓库同步用户【${this.currentUser}】的最新考研数据！`);
+        if (showToast) alert(`成功从 GitHub 仓库同步用户【${this.currentUser}】的最新考研数据！`);
       }
     } catch (err) {
       this.elements.ghSyncStatusText.innerText = "拉取失败：" + err.message;
@@ -836,7 +845,7 @@ class KaoyanApp {
       const timeStr = new Date().toLocaleTimeString();
       this.elements.ghSyncStatusText.innerText = `[${this.currentUser}] 提交成功 (已持久化)`;
       this.elements.ghLastSyncTime.innerText = timeStr;
-      if (showToast) alert(`🎉 用户【${this.currentUser}】的考研数据已成功保存到仓库 ${userPath}！`);
+      if (showToast) alert(`用户【${this.currentUser}】的考研数据已成功保存到仓库 ${userPath}！`);
     } catch (err) {
       this.elements.ghSyncStatusText.innerText = "提交失败：" + err.message;
       if (showToast) alert("提交到 GitHub 仓库失败：" + err.message);
@@ -875,6 +884,8 @@ class KaoyanApp {
     if (tabId === "mistakes") this.renderMistakes();
     if (tabId === "pomodoro") this.renderPomodoroLogs();
     if (tabId === "analytics") this.renderAnalytics();
+
+    this.refreshIcons();
   }
 
   startCountdown() {
@@ -926,7 +937,7 @@ class KaoyanApp {
     if (cur.exp >= required && cur.level < skill.maxLevel) {
       cur.level++;
       cur.exp -= required;
-      alert("🌟 恭喜！技能【" + skill.name + "】成功晋升至 Lv." + cur.level + "！");
+      alert("技能【" + skill.name + "】成功晋升至 Lv." + cur.level + "！");
     }
     this.saveState();
   }
@@ -957,6 +968,7 @@ class KaoyanApp {
     this.elements.statTotalMistakes.innerText = this.state.mistakes.length;
 
     this.renderDashboardProgress();
+    this.refreshIcons();
   }
 
   renderDashboardProgress() {
@@ -978,7 +990,9 @@ class KaoyanApp {
       html += `
         <div class="glass-card p-5 cursor-pointer hover:border-indigo-500/50" onclick="app.jumpToOutline('${sub.id}')">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-2xl">${sub.icon}</span>
+            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <i data-lucide="${sub.icon || 'book'}" class="w-4 h-4"></i>
+            </div>
             <span class="text-xs px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-indigo-300 font-mono">${percent}%</span>
           </div>
           <h4 class="font-bold text-gray-100 text-sm mb-1">${sub.name}</h4>
@@ -990,6 +1004,7 @@ class KaoyanApp {
       `;
     });
     container.innerHTML = html;
+    this.refreshIcons();
   }
 
   jumpToOutline(subjectId) {
@@ -1003,7 +1018,7 @@ class KaoyanApp {
       const active = tree.id === this.activeSkillSubject ? "bg-indigo-600/30 border-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-gray-800/40 border-gray-700 text-gray-400";
       tabsHtml += `
         <button data-skill-subj="${tree.id}" class="px-4 py-2 rounded-xl border text-xs font-semibold transition-all flex items-center gap-2 ${active}">
-          <span>${tree.icon}</span>
+          <i data-lucide="${tree.icon || 'circle'}" class="w-3.5 h-3.5"></i>
           <span>${tree.badge}</span>
         </button>
       `;
@@ -1023,8 +1038,8 @@ class KaoyanApp {
         <div class="skill-node p-6 flex flex-col justify-between relative overflow-hidden">
           <div>
             <div class="flex items-center justify-between mb-3">
-              <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xl">
-                ${sk.icon}
+              <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <i data-lucide="${sk.icon || 'zap'}" class="w-5 h-5"></i>
               </div>
               <span class="skill-level-badge text-black font-extrabold text-xs px-2.5 py-0.5 rounded-full font-mono">
                 Lv.${userSkill.level} / 5
@@ -1046,7 +1061,7 @@ class KaoyanApp {
             </div>
 
             <div class="pt-3 border-t border-white/5 flex items-center justify-between">
-              <span class="text-[10px] text-emerald-400">🎁 ${sk.rewards[0] || '解锁高阶技能'}</span>
+              <span class="text-[10px] text-emerald-400">${sk.rewards[0] || '解锁高阶技能'}</span>
               <button onclick="app.trainSkill('${currentTree.id}', '${sk.id}')" class="px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-xs text-indigo-200 hover:text-white border border-indigo-500/40 transition-all font-semibold">
                 +30 EXP 淬炼
               </button>
@@ -1057,6 +1072,7 @@ class KaoyanApp {
     });
 
     this.elements.skillsNodesContainer.innerHTML = nodesHtml;
+    this.refreshIcons();
   }
 
   trainSkill(subjectId, skillId) {
@@ -1101,8 +1117,9 @@ class KaoyanApp {
               <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20">
                 ${snip.category}
               </span>
-              <button onclick="app.askAIAboutCode('${snip.id}')" class="text-xs text-purple-300 hover:text-white px-2.5 py-1 rounded-lg bg-purple-600/30 hover:bg-purple-600 border border-purple-500/30 flex items-center gap-1 transition-all">
-                <span>✨ AI 评审与复杂度分析</span>
+              <button onclick="app.askAIAboutCode('${snip.id}')" class="text-xs text-purple-300 hover:text-white px-2.5 py-1 rounded-lg bg-purple-600/30 hover:bg-purple-600 border border-purple-500/30 flex items-center gap-1.5 transition-all">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>AI 评审与复杂度分析</span>
               </button>
             </div>
             <h4 class="font-bold text-white text-sm mb-1">${snip.title}</h4>
@@ -1111,14 +1128,16 @@ class KaoyanApp {
           </div>
           <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-gray-400">
             <span>语言: ${snip.language.toUpperCase()}</span>
-            <button onclick="navigator.clipboard.writeText(\`${snip.code.replace(/`/g, '\\`')}\`); alert('代码已复制到剪贴板！');" class="text-indigo-400 hover:underline">
-              📋 复制代码
+            <button onclick="navigator.clipboard.writeText(\`${snip.code.replace(/`/g, '\\`')}\`); alert('代码已复制到剪贴板！');" class="text-indigo-400 hover:underline flex items-center gap-1">
+              <i data-lucide="copy" class="w-3 h-3"></i>
+              <span>复制代码</span>
             </button>
           </div>
         </div>
       `;
     });
     container.innerHTML = html;
+    this.refreshIcons();
   }
 
   askAIAboutCode(snippetId) {
@@ -1147,7 +1166,7 @@ class KaoyanApp {
             <div class="flashcard-front absolute inset-0 glass-panel p-6 flex flex-col justify-between border-indigo-500/30">
               <div class="flex items-center justify-between">
                 <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono">核心词根</span>
-                <span class="text-[11px] text-gray-400">👆 点击翻转</span>
+                <span class="text-[11px] text-gray-400">[点击翻转]</span>
               </div>
               <div class="text-center my-auto">
                 <h3 class="text-2xl font-extrabold text-white font-mono tracking-wide">${card.root}</h3>
@@ -1162,7 +1181,7 @@ class KaoyanApp {
             <div class="flashcard-back absolute inset-0 glass-panel p-5 flex flex-col justify-between border-purple-500/30 overflow-y-auto">
               <div class="flex items-center justify-between pb-2 border-b border-white/5">
                 <span class="text-xs font-bold text-purple-300 font-mono">${card.root}</span>
-                <span class="text-[10px] text-emerald-400 cursor-pointer" onclick="event.stopPropagation(); app.addSkillExp('english', 30); alert('已完成该词根卡片学习！+30 EXP');">✅ 标记掌握</span>
+                <span class="text-[10px] text-emerald-400 cursor-pointer" onclick="event.stopPropagation(); app.addSkillExp('english', 30); alert('已完成该词根卡片学习！+30 EXP');">[标记掌握]</span>
               </div>
               <div class="space-y-2 text-xs my-auto">
                 ${card.examples.map(ex => `
@@ -1183,6 +1202,7 @@ class KaoyanApp {
     });
 
     container.innerHTML = html;
+    this.refreshIcons();
   }
 
   // =================== 考点大纲与沉浸精讲 ===================
@@ -1193,7 +1213,7 @@ class KaoyanApp {
       const active = sub.id === this.activeOutlineSubject ? "bg-indigo-600/30 border-indigo-500 text-white" : "bg-gray-800/40 border-gray-700 text-gray-400";
       tabHtml += `
         <button data-subject="${sub.id}" class="px-4 py-2 rounded-lg border text-sm font-medium transition-all flex items-center gap-2 ${active}">
-          <span>${sub.icon}</span>
+          <i data-lucide="${sub.icon || 'book'}" class="w-4 h-4"></i>
           <span>${sub.name}</span>
         </button>
       `;
@@ -1226,7 +1246,7 @@ class KaoyanApp {
               ${pt.title}
             </div>
             <div class="flex items-center gap-2">
-              <button onclick="app.openPointStudy('${subject.id}', '${pt.title}')" class="text-xs text-indigo-400 hover:text-indigo-300 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20" title="打开沉浸式考点深度研读">📖 精讲</button>
+              <button onclick="app.openPointStudy('${subject.id}', '${pt.title}')" class="text-xs text-indigo-400 hover:text-indigo-300 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20" title="打开沉浸式考点深度研读">精讲</button>
               <span class="text-xs px-2 py-0.5 rounded bg-white/5 text-gray-400 font-mono">第${pt.round || 1}轮</span>
               <button onclick="app.advanceRound('${subject.id}', ${chIdx}, ${ptIdx})" class="text-xs text-gray-400 hover:text-indigo-400 p-1" title="增加复习轮次">+1轮</button>
             </div>
@@ -1255,17 +1275,19 @@ class KaoyanApp {
     const percent = subTotal > 0 ? Math.round((subDone / subTotal) * 100) : 0;
     this.elements.outlineProgressBar.style.width = `${percent}%`;
     this.elements.outlineProgressPercent.innerText = `${percent}% (${subDone}/${subTotal})`;
+    this.refreshIcons();
   }
 
   openPointStudy(subjectId, pointTitle) {
     this.currentStudyingPoint = { subjectId, pointTitle };
     this.elements.studyPointTitle.innerText = pointTitle;
     
-    let content = `### 🎯 核心概念与考研命题规律\n该考点属于 **${subjectId}** 的核心高频考察范畴，在历年真题中常以客观选择题与综合解答大题的形式出现。\n\n### 💡 解题技巧与避坑指南\n1. **审清题意**：明确题目所给的边界条件与约束，防止漏掉临界状态。\n2. **套路应用**：熟记本考点的标准推导公式与答题模板步骤。\n3. **多维复盘**：结合历年真题与错题本反思易错混淆点。\n\n### 🌟 考研学长学姐备考寄语\n“把每一次的弄懂当做上岸的台阶，稳扎稳打，一战成硕！”`;
+    let content = `### 核心概念与考研命题规律\n该考点属于 **${subjectId}** 的核心高频考察范畴，在历年真题中常以客观选择题与综合解答大题的形式出现。\n\n### 解题技巧与避坑指南\n1. **审清题意**：明确题目所给的边界条件与约束，防止漏掉临界状态。\n2. **套路应用**：熟记本考点的标准推导公式与答题模板步骤。\n3. **多维复盘**：结合历年真题与错题本反思易错混淆点。\n\n### 考研学长学姐备考寄语\n“把每一次的弄懂当做上岸的台阶，稳扎稳打，一战成硕！”`;
     
     this.elements.studyPointBody.innerHTML = marked.parse(content);
     this.elements.modalPointStudy.classList.remove("hidden");
     this.elements.modalPointStudy.classList.add("flex");
+    this.refreshIcons();
   }
 
   togglePoint(subjectId, chIdx, ptIdx) {
@@ -1310,7 +1332,6 @@ class KaoyanApp {
     if (filtered.length === 0) {
       this.elements.mistakesContainer.innerHTML = `
         <div class="glass-panel p-12 text-center text-gray-500 col-span-full">
-          <p class="text-4xl mb-3">🐞</p>
           <p class="text-sm">暂无匹配的错题 Issue，点击右上角「提出新错题 Issue」开始追踪！</p>
         </div>
       `;
@@ -1325,15 +1346,14 @@ class KaoyanApp {
     };
 
     const statusBadgeMap = {
-      open: `<span class="px-2 py-0.5 rounded text-[10px] font-mono issue-badge-open">🔴 Open</span>`,
-      testing: `<span class="px-2 py-0.5 rounded text-[10px] font-mono issue-badge-testing">🟡 Testing (二刷)</span>`,
-      closed: `<span class="px-2 py-0.5 rounded text-[10px] font-mono issue-badge-closed">🟢 Closed (已攻克)</span>`
+      open: `<span class="px-2 py-0.5 rounded text-[10px] font-mono issue-badge-open">Open</span>`,
+      testing: `<span class="px-2 py-0.5 rounded text-[10px] font-mono issue-badge-testing">Testing (二刷)</span>`,
+      closed: `<span class="px-2 py-0.5 rounded text-[10px] font-mono issue-badge-closed">Closed (已攻克)</span>`
     };
 
     let html = "";
     filtered.forEach(item => {
       const subInfo = subjectMap[item.subject] || { name: item.subject, color: "gray" };
-      const stars = "★".repeat(item.mastery) + "☆".repeat(5 - item.mastery);
       const st = item.status || "open";
 
       html += `
@@ -1346,7 +1366,7 @@ class KaoyanApp {
                 </span>
                 ${statusBadgeMap[st] || statusBadgeMap.open}
               </div>
-              <span class="text-amber-400 font-mono text-xs" title="掌握熟练度: ${item.mastery}/5 星">${stars}</span>
+              <span class="text-amber-400 font-mono text-xs" title="掌握熟练度: ${item.mastery}/5 级">Lv.${item.mastery} / 5</span>
             </div>
             <h4 class="font-bold text-gray-100 text-base mb-2">${item.title}</h4>
             
@@ -1373,7 +1393,7 @@ class KaoyanApp {
           <div class="flex items-center justify-between pt-3 border-t border-white/5 text-xs text-gray-500">
             <span>记录于 ${item.date}</span>
             <div class="flex gap-3 items-center">
-              <button onclick="app.askAIAssistantForMistake('${item.id}')" class="text-purple-400 hover:text-purple-300 font-medium">✨ AI 变式题</button>
+              <button onclick="app.askAIAssistantForMistake('${item.id}')" class="text-purple-400 hover:text-purple-300 font-medium">AI 变式题</button>
               <button onclick="app.editMistake('${item.id}')" class="text-indigo-400 hover:text-indigo-300 font-medium">编辑</button>
               <button onclick="app.deleteMistake('${item.id}')" class="text-rose-400 hover:text-rose-300 font-medium">删除</button>
             </div>
@@ -1383,6 +1403,7 @@ class KaoyanApp {
     });
 
     this.elements.mistakesContainer.innerHTML = html;
+    this.refreshIcons();
   }
 
   askAIAssistantForMistake(id) {
@@ -1408,6 +1429,7 @@ class KaoyanApp {
 
     this.elements.modalMistake.classList.remove("hidden");
     this.elements.modalMistake.classList.add("flex");
+    this.refreshIcons();
   }
 
   deleteMistake(id) {
@@ -1425,6 +1447,7 @@ class KaoyanApp {
     this.isTimerRunning = true;
     this.elements.pomoBtnStart.classList.add("hidden");
     this.elements.pomoBtnPause.classList.remove("hidden");
+    this.refreshIcons();
 
     this.timerInterval = setInterval(() => {
       this.timerSeconds--;
@@ -1447,22 +1470,23 @@ class KaoyanApp {
           this.saveState();
           this.renderPomodoroLogs();
 
-          alert("🎉 恭喜完成一个番茄钟（" + minutes + "分钟）！已获得 +50 技能 EXP！休息5分钟吧~");
+          alert("恭喜完成一个番茄钟（" + minutes + "分钟）！已获得 +50 技能 EXP！休息5分钟吧~");
           this.isBreakMode = true;
           this.timerTotal = 5 * 60;
           this.timerSeconds = 5 * 60;
-          this.elements.pomoModeTitle.innerText = "☕ 休息时间 (5分钟)";
+          this.elements.pomoModeTitle.innerText = "休息时间 (5分钟)";
         } else {
-          alert("☕ 休息结束，准备好开启下一轮专注了吗？");
+          alert("休息结束，准备好开启下一轮专注了吗？");
           this.isBreakMode = false;
           this.timerTotal = 25 * 60;
           this.timerSeconds = 25 * 60;
-          this.elements.pomoModeTitle.innerText = "🎯 专注模式 (25分钟)";
+          this.elements.pomoModeTitle.innerText = "专注模式 (25分钟)";
         }
 
         this.elements.pomoBtnStart.classList.remove("hidden");
         this.elements.pomoBtnPause.classList.add("hidden");
         this.updateTimerDisplay();
+        this.refreshIcons();
       }
     }, 1000);
   }
@@ -1472,6 +1496,7 @@ class KaoyanApp {
     this.isTimerRunning = false;
     this.elements.pomoBtnStart.classList.remove("hidden");
     this.elements.pomoBtnPause.classList.add("hidden");
+    this.refreshIcons();
   }
 
   resetPomodoro() {
@@ -1479,8 +1504,9 @@ class KaoyanApp {
     this.isBreakMode = false;
     this.timerTotal = 25 * 60;
     this.timerSeconds = 25 * 60;
-    this.elements.pomoModeTitle.innerText = "🎯 专注模式 (25分钟)";
+    this.elements.pomoModeTitle.innerText = "专注模式 (25分钟)";
     this.updateTimerDisplay();
+    this.refreshIcons();
   }
 
   updateTimerDisplay() {
@@ -1515,7 +1541,7 @@ class KaoyanApp {
     if (!this.elements.pomoLogsList) return;
     const logs = this.state.logs.slice(0, 8);
     if (logs.length === 0) {
-      this.elements.pomoLogsList.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">暂无专注记录，点击开始按钮启动番茄钟！</p>`;
+      this.elements.pomoLogsList.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">暂无专注记录，点击开始按钮启动专注时钟！</p>`;
       return;
     }
 
@@ -1612,13 +1638,13 @@ class KaoyanApp {
     let totalSkillLvl = 0;
     Object.values(this.state.skills).forEach(s => totalSkillLvl += s.level);
 
-    let md = `# 🎯 考研工程复习日报 (${today})\n\n`;
+    let md = `# 考研工程复习日报 (${today})\n\n`;
     md += `> 用户身份：**${this.currentUser}**\n`;
     md += `> 目标院校：${this.state.targetSchool}\n`;
     md += `> 今日专注总时长：**${todayMinutes}** 分钟 (${(todayMinutes / 60).toFixed(1)} 小时)\n`;
     md += `> 考研技能树总等级：**Lv.${totalSkillLvl}**\n\n`;
 
-    md += `## ⏱️ 今日专注记录\n`;
+    md += `## 今日专注记录\n`;
     if (todayLogs.length === 0) {
       md += `- 今日暂无打卡记录\n`;
     } else {
@@ -1627,15 +1653,16 @@ class KaoyanApp {
       });
     }
 
-    md += `\n## 🐞 错题 Issue 统计\n`;
+    md += `\n## 错题 Issue 统计\n`;
     md += `- 当前错题本累计记录：**${this.state.mistakes.length}** 个 Issues (包含待攻克、二刷检验与已闭环)\n\n`;
 
-    md += `## 🌟 今日复习心得与明日规划\n`;
+    md += `## 今日复习心得与明日规划\n`;
     md += `- 今日收获：\n- 明日重点任务：\n`;
 
     this.elements.reportContent.value = md;
     this.elements.modalReport.classList.remove("hidden");
     this.elements.modalReport.classList.add("flex");
+    this.refreshIcons();
   }
 
   exportJSONBackup() {
@@ -1668,7 +1695,7 @@ class KaoyanApp {
           this.saveState();
           this.renderUserDropdown();
           this.render();
-          alert("🎉 数据还原成功！");
+          alert("数据还原成功！");
         } else {
           alert("文件格式不正确，缺少核心字段！");
         }
@@ -1689,6 +1716,7 @@ class KaoyanApp {
     this.renderMistakes();
     this.renderPomodoroLogs();
     this.renderAnalytics();
+    this.refreshIcons();
   }
 }
 

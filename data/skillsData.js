@@ -1,199 +1,200 @@
-// 考研全科技能树系统 (Kaoyan Skill Tree Data)
+// 考研能力技能树定义 (纯净无 Emoji 版)
+
 const SKILLS_DATA = {
   math: {
     id: "math",
-    name: "考研数学技能树",
-    icon: "📐",
-    badge: "数学",
-    desc: "攻克微积分、线性代数与概率论，筑牢考研理科基石",
+    name: "考研数学核心能力",
+    badge: "数学逻辑",
+    icon: "sigma",
     skills: [
       {
         id: "math_limit",
-        name: "极限猎手 (Limit Hunter)",
+        name: "极限与无穷小极速化简",
         category: "高等数学",
-        icon: "🎯",
-        desc: "精通八大等价无穷小、泰勒展开式与洛必达法则，秒杀各类不定式极限",
+        icon: "zap",
+        desc: "精通泰勒展开 8 大基本公式、八大等价无穷小代换与洛必达法则的综合计算。",
         maxLevel: 5,
         expPerLevel: 100,
-        rewards: ["解锁《泰勒公式极速展开秘籍》", "获得【极限大师】徽章"]
+        rewards: ["解锁复杂极限秒杀技巧", "计算失误率降低 50%"]
       },
       {
         id: "math_integral",
-        name: "积分大师 (Integral Master)",
+        name: "一元与多元积分综合运算",
         category: "高等数学",
-        icon: "🌊",
-        desc: "熟练掌握第一类/第二类换元法、分部积分法与有理函数积分技巧",
+        icon: "layers",
+        desc: "熟练掌握不定积分分部积分、定积分奇偶性化简、二重积分极坐标转换与对称性应用。",
         maxLevel: 5,
-        expPerLevel: 120,
-        rewards: ["解锁《常见不定积分速查表》", "获得【积分达人】徽章"]
+        expPerLevel: 100,
+        rewards: ["熟练处理变上限积分导数", "二重积分计算速度翻倍"]
       },
       {
         id: "math_diff_prove",
-        name: "中值定理证明家 (Proof Artisan)",
+        name: "中值定理与不等式证明",
         category: "高等数学",
-        icon: "⚖️",
-        desc: "精通罗尔、拉格朗日、柯西与泰勒中值定理的辅助函数构造",
+        icon: "shield",
+        desc: "精通罗尔、拉格朗日、柯西中值定理辅助函数构造，熟练应用单调性与凸凹性证明不等式。",
         maxLevel: 5,
-        expPerLevel: 150,
-        rewards: ["解锁《中值定理构造辅助函数八大套路》", "获得【逻辑严密】徽章"]
+        expPerLevel: 100,
+        rewards: ["中值定理大题拿满分", "辅助函数构造秒反应"]
       },
       {
         id: "math_matrix",
-        name: "矩阵征服者 (Matrix Conqueror)",
+        name: "线性方程组与矩阵特征分析",
         category: "线性代数",
-        icon: "🔢",
-        desc: "精通初等行变换、矩阵的秩、特征值与特征向量、实对称矩阵正交对角化",
+        icon: "grid",
+        desc: "掌握矩阵初等行变换、向量组线性相关/无关判据、方程组通解结构与相似对角化判定。",
         maxLevel: 5,
         expPerLevel: 100,
-        rewards: ["解锁《线代八大定理思维导图》", "获得【矩阵主宰】徽章"]
+        rewards: ["线代计算零失误", "二次型规范化速解"]
       },
       {
         id: "math_prob",
-        name: "概率先知 (Probability Prophet)",
-        category: "概率统计",
-        icon: "🎲",
-        desc: "洞悉全概率与贝叶斯公式、二维连续型随机变量联合分布与最大似然估计",
+        name: "随机变量分布与参数估计",
+        category: "概率论",
+        icon: "percent",
+        desc: "熟记八大常见分布性质、二维联合概率密度积分求边缘与极大似然估计方程求解。",
         maxLevel: 5,
         expPerLevel: 100,
-        rewards: ["解锁《常见概率分布数字特征表》", "获得【概率先知】徽章"]
+        rewards: ["极大似然估计全拿满分", "二维分布转换熟练掌握"]
       }
     ]
   },
   cs408: {
     id: "cs408",
-    name: "计算机408技能树",
-    icon: "💻",
-    badge: "408",
-    desc: "数据结构、组成原理、操作系统与网络，全方位点亮计算机底层硬核能力",
+    name: "计算机 408 核心架构能力",
+    badge: "计算机专业课",
+    icon: "cpu",
     skills: [
       {
         id: "cs_ds_algo",
-        name: "算法与指针行者 (Algorithm & DS)",
+        name: "算法设计与复杂度分析",
         category: "数据结构",
-        icon: "🌲",
-        desc: "精通链表、二叉树遍历、并查集、Dijkstra最短路径与八大排序算法时空复杂度",
+        icon: "code",
+        desc: "精通链表、二叉树、图算法(Dijkstra/Floyd)以及内部排序算法的时空复杂度手推与 C 语言编写。",
         maxLevel: 5,
-        expPerLevel: 120,
-        rewards: ["解锁《八大经典排序时空复杂度与稳定性速查表》", "获得【算法极客】徽章"]
+        expPerLevel: 100,
+        rewards: ["408 算法大题满分代码", "递归时间复杂度精准推导"]
       },
       {
         id: "cs_arch_pipeline",
-        name: "指令流水线工程师 (Pipeline Architect)",
-        category: "组成原理",
-        icon: "⚙️",
-        desc: "吃透定点浮点运算 (IEEE 754)、Cache组相联映射与CPU五段指令流水线冲突",
+        name: "CPU 指令流水线与存储层次结构",
+        category: "计算机组成原理",
+        icon: "server",
+        desc: "掌握 IEEE 754 浮点数运算、Cache 直接/组相联映射地址划分与流水线冲突停顿计算。",
         maxLevel: 5,
-        expPerLevel: 120,
-        rewards: ["解锁《IEEE 754与Cache命中率速算法》", "获得【硬件极客】徽章"]
+        expPerLevel: 100,
+        rewards: ["Cache 命中率极速计算", "流水线 CPI 评估零失误"]
       },
       {
         id: "cs_os_pv",
-        name: "并发与PV调度师 (Concurrent Master)",
+        name: "操作系统进程同步与 PV 原语设计",
         category: "操作系统",
-        icon: "🚦",
-        desc: "熟练手写生产者消费者、读者写者、哲学家就餐等信号量PV同步互斥模型",
+        icon: "sliders",
+        desc: "熟练书写生产者消费者、读者写者、理发师与哲学家就餐等高难度 PV 同步模型标准代码。",
         maxLevel: 5,
-        expPerLevel: 150,
-        rewards: ["解锁《操作系统经典PV模型手写模板》", "获得【并发调度大师】徽章"]
+        expPerLevel: 100,
+        rewards: ["PV 大题无死锁设计", "虚拟内存页面置换熟练分析"]
       },
       {
         id: "cs_net_tcp",
-        name: "网络协议全栈通 (Protocol Stack Pro)",
+        name: "网络协议状态机与拥塞控制",
         category: "计算机网络",
-        icon: "🌐",
-        desc: "精通IP子网划分CIDR、TCP三次握手四次挥手、滑动窗口流量控制与拥塞控制",
+        icon: "wifi",
+        desc: "深刻掌握 TCP 三次握手/四次挥手全状态迁移、序号确认号计算与慢开始/拥塞避免窗口推导。",
         maxLevel: 5,
         expPerLevel: 100,
-        rewards: ["解锁《TCP状态机与报文格式图解》", "获得【网络架构师】徽章"]
+        rewards: ["CIDR 子网秒级划分", "TCP 状态报文精准抓取"]
       }
     ]
   },
   english: {
     id: "english",
-    name: "考研英语技能树",
-    icon: "🇬🇧",
-    badge: "英语",
-    desc: "词汇突破、长难句拆解、真题逻辑破解与高分写作模板",
+    name: "考研英语语料与逻辑解构",
+    badge: "英语读写",
+    icon: "book-open",
     skills: [
       {
         id: "eng_roots",
-        name: "词根词缀解码者 (Lexicon Decoder)",
-        category: "词汇突破",
-        icon: "📖",
-        desc: "掌握核心100大词根词缀，实现5500考研高频词汇与熟词僻义极速串联",
+        name: "5500 核心词根词缀网络",
+        category: "英语词汇",
+        icon: "bookmark",
+        desc: "通过前缀与词根系统掌握大纲高频派生词，彻底攻克熟词僻义与语境干扰项。",
         maxLevel: 5,
         expPerLevel: 100,
-        rewards: ["解锁《考研英语核心词根词缀100条》", "获得【词汇大亨】徽章"]
+        rewards: ["词汇认知量突破 5500", "生词推导正确率 90%"]
       },
       {
         id: "eng_grammar",
-        name: "长难句解构师 (Sentence Architect)",
-        category: "语法突破",
-        icon: "🔍",
-        desc: "精准定位句子主干，快速理清定语从句、非谓语、倒装与插入语逻辑",
+        name: "复杂长难句语法主干速解",
+        category: "语法结构",
+        icon: "edit-3",
+        desc: "精准定位同位语从句、分割结构、倒装句与非谓语动词短语，实现长难句秒读。",
         maxLevel: 5,
-        expPerLevel: 120,
-        rewards: ["解锁《长难句三步拆解法则》", "获得【长难句克星】徽章"]
+        expPerLevel: 100,
+        rewards: ["阅读长难句零阅读障碍", "英译汉翻译通顺达意"]
       },
       {
         id: "eng_reading",
-        name: "真题逻辑破壁人 (Reading Crusher)",
-        category: "真题阅读",
-        icon: "💡",
-        desc: "洞悉事实细节、主旨大意、推理判断与态度题的干扰项设置规律与同义替换",
+        name: "真题阅读精准定位与逻辑反套路",
+        category: "阅读理解",
+        icon: "eye",
+        desc: "识别事实细节题、态度题、因果推断题的命题套路与偷换概念/无中生有等干扰项陷阱。",
         maxLevel: 5,
-        expPerLevel: 150,
-        rewards: ["解锁《阅读真题命题人逻辑复盘手册》", "获得【阅读满分王】徽章"]
+        expPerLevel: 100,
+        rewards: ["阅读单篇错误控制在 1 题以内", "定位精度极大提升"]
       },
       {
         id: "eng_writing",
-        name: "高分写作操盘手 (Writing Maestro)",
-        category: "作文高分",
-        icon: "✍️",
-        desc: "熟练运用三段式黄金论证框架、高级连接词与个性化图画/图表大作文模板",
+        name: "高分论说文语料库与行文框架",
+        category: "英语写作",
+        icon: "feather",
+        desc: "熟练应用现象描述、多维度因果分析、反面论证与未来倡议等万能论证结构。",
         maxLevel: 5,
-        expPerLevel: 120,
-        rewards: ["解锁《考研大小作文万能高分功能句库》", "获得【妙笔生花】徽章"]
+        expPerLevel: 100,
+        rewards: ["大作文书写流利一气呵成", "高级语法句型自然运用"]
       }
     ]
   },
   politics: {
     id: "politics",
-    name: "思想政治技能树",
-    icon: "🇨🇳",
-    badge: "政治",
-    desc: "马原辩证法、史纲时间线、毛中特与新时代思想全盘掌握",
+    name: "思想政治框架与论述体系",
+    badge: "政治大招",
+    icon: "landmark",
     skills: [
       {
         id: "pol_marx",
-        name: "唯物辩证通 (Dialectical Thinker)",
-        category: "马原",
-        icon: "🧠",
-        desc: "透彻理解对立统一规律、实践与认识辩证关系以及剩余价值生产过程",
+        name: "马原唯物辩证与政经分析框架",
+        category: "马克思主义原理",
+        icon: "compass",
+        desc: "建立辩证法三大规律、实践与认识论、商品二因素与剩余价值论的严密逻辑框架。",
         maxLevel: 5,
         expPerLevel: 100,
-        rewards: ["解锁《马原核心哲学原理与答题套路》", "获得【辩证先锋】徽章"]
+        rewards: ["马原主观大题原理精准锁定", "多选题干扰项秒排除"]
       },
       {
         id: "pol_history",
-        name: "史纲脉络穿透者 (Chronology Master)",
-        category: "史纲",
-        icon: "📜",
-        desc: "烂熟近代中国救亡图存路线图、党的一大至二十大关键历史会议与里程碑",
+        name: "近现代史纲要全景历史脉络",
+        category: "近代史纲要",
+        icon: "clock",
+        desc: "牢记党史各次重大会议、统一战线演进、抗日战争与社会主义现代化建设时间线。",
         maxLevel: 5,
         expPerLevel: 100,
-        rewards: ["解锁《中国近现代史重大事件与会议全览表》", "获得【历史百科】徽章"]
+        rewards: ["史纲重要会议全盘熟记", "历史背景考点零混淆"]
       },
       {
         id: "pol_xi",
-        name: "新时代思想学者 (New Era Scholar)",
-        category: "毛中特与新思想",
-        icon: "🇨🇳",
-        desc: "系统掌握高质量发展、新质生产力、中国式现代化与十个明确十四个坚持",
+        name: "新时代中国特色社会主义理论体系",
+        category: "毛中特与习思想",
+        icon: "award",
+        desc: "熟记新发展理念、高质量发展、全面依法治国与中国式现代化的核心表述与金句。",
         maxLevel: 5,
         expPerLevel: 100,
-        rewards: ["解锁《新质生产力与中国式现代化核心答题句》", "获得【领航者】徽章"]
+        rewards: ["时政结合点准确切入", "分析题答案规范得分率高"]
       }
     ]
   }
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { SKILLS_DATA };
+}

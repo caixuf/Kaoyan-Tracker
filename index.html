@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kaoyan Tracker 4.0 - 研发式考研工程系统 & AI 结对研伴</title>
+  <title>Kaoyan IDE - 考研工程系统与 AI 结对研伴</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -15,90 +15,92 @@
   <header class="sticky top-0 z-40 glass-nav">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-          <span class="text-xl">🎓</span>
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+          <i data-lucide="terminal" class="w-5 h-5 text-white"></i>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base font-extrabold bg-gradient-to-r from-white via-gray-200 to-indigo-300 bg-clip-text text-transparent">
+            <h1 class="text-base font-bold bg-gradient-to-r from-white via-gray-200 to-indigo-300 bg-clip-text text-transparent">
               Kaoyan IDE
             </h1>
             <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30">v4.0 Pro</span>
           </div>
           <p class="text-xs text-gray-400 flex items-center gap-1 cursor-pointer group" id="target-school-display" title="点击可修改目标院校">
             <span>目标院校 & 专业</span>
-            <span class="opacity-0 group-hover:opacity-100 text-indigo-400 text-[10px]">✎ 修改</span>
+            <span class="opacity-0 group-hover:opacity-100 text-indigo-400 text-[10px]">[修改]</span>
           </p>
         </div>
       </div>
 
-      <!-- 选项卡导航 -->
+      <!-- 选项卡导航 (Clean Lucide Icons) -->
       <nav class="flex items-center gap-1 bg-gray-900/70 p-1 rounded-xl border border-white/5 overflow-x-auto">
         <button class="tab-btn active px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap" data-tab="dashboard">
-          <span>📊</span> 看板
+          <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> 看板
         </button>
         <button class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400 whitespace-nowrap" data-tab="skills">
-          <span>🌲</span> 技能树
+          <i data-lucide="git-branch" class="w-3.5 h-3.5"></i> 技能树
         </button>
         <button class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400 whitespace-nowrap" data-tab="materials">
-          <span>📖</span> 自包含手册
+          <i data-lucide="book-open" class="w-3.5 h-3.5"></i> 自包含手册
         </button>
         <button class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400 whitespace-nowrap" data-tab="codebench">
-          <span>💻</span> 408算法库
+          <i data-lucide="code-2" class="w-3.5 h-3.5"></i> 408算法库
         </button>
         <button class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400 whitespace-nowrap" data-tab="flashcards">
-          <span>🇬🇧</span> 英语词根卡
+          <i data-lucide="layers" class="w-3.5 h-3.5"></i> 词根卡片
         </button>
         <button class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400 whitespace-nowrap" data-tab="outline">
-          <span>📚</span> 考点大纲
+          <i data-lucide="check-square" class="w-3.5 h-3.5"></i> 考点大纲
         </button>
         <button class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400 whitespace-nowrap" data-tab="mistakes">
-          <span>🐞</span> 错题 Tracker
+          <i data-lucide="bug" class="w-3.5 h-3.5"></i> 错题 Issue
         </button>
         <button class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400 whitespace-nowrap" data-tab="pomodoro">
-          <span>⏱️</span> 专注时钟
+          <i data-lucide="clock" class="w-3.5 h-3.5"></i> 专注时钟
         </button>
         <button class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400 whitespace-nowrap" data-tab="analytics">
-          <span>📈</span> 工程日报
+          <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> 工程日报
         </button>
       </nav>
 
       <!-- 用户身份、AI研伴与云存储工具栏 -->
       <div class="flex items-center gap-2">
         <!-- AI 研伴触发按钮 -->
-        <button id="btn-toggle-ai-copilot" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600 hover:to-indigo-600 border border-purple-500/40 text-xs text-purple-200 hover:text-white transition-all flex items-center gap-1.5 font-bold shadow-sm" title="唤醒 AI 考研结对研伴">
-          <span>✨ AI 研伴</span>
-          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <button id="btn-toggle-ai-copilot" class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 text-xs text-indigo-200 hover:text-white transition-all flex items-center gap-1.5 font-bold shadow-sm" title="唤醒 AI 考研结对研伴">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>AI 研伴</span>
         </button>
 
         <!-- 用户选择切换 -->
         <div class="relative">
           <button id="btn-user-menu" class="px-2.5 py-1.5 rounded-lg bg-gray-800/90 hover:bg-gray-700 border border-white/10 text-xs text-gray-200 flex items-center gap-1.5 font-medium transition-all" title="切换用户或创建新档案">
-            <span class="text-indigo-400">👤</span>
+            <i data-lucide="user" class="w-3.5 h-3.5 text-indigo-400"></i>
             <span id="current-user-name" class="font-mono">caixuf</span>
-            <span class="text-[10px] text-gray-400">▾</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 text-gray-400"></i>
           </button>
           <div id="user-dropdown-menu" class="absolute right-0 mt-2 w-48 rounded-xl glass-panel p-2 shadow-2xl border border-white/10 hidden z-50">
             <div class="text-[11px] text-gray-400 px-2 py-1 font-semibold border-b border-white/5 mb-1">切换用户档案</div>
             <div id="user-list-items" class="space-y-0.5 max-h-36 overflow-y-auto"></div>
             <div class="border-t border-white/5 mt-1 pt-1">
-              <button id="btn-create-user-modal" class="w-full text-left px-2 py-1.5 rounded-lg text-xs text-indigo-300 hover:bg-indigo-600/30 flex items-center gap-1 font-semibold transition-all">
-                <span>➕ 新建研友档案</span>
+              <button id="btn-create-user-modal" class="w-full text-left px-2 py-1.5 rounded-lg text-xs text-indigo-300 hover:bg-indigo-600/30 flex items-center gap-1.5 font-semibold transition-all">
+                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                <span>新建研友档案</span>
               </button>
             </div>
           </div>
         </div>
 
-        <button id="btn-open-github-sync" class="px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/40 text-xs text-indigo-200 hover:text-white transition-all flex items-center gap-1.5 font-semibold shadow-sm" title="配置 GitHub 仓库直连同步">
-          <span>☁️ 仓库云存储</span>
+        <button id="btn-open-github-sync" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-white/10 text-xs text-gray-200 transition-all flex items-center gap-1.5 font-semibold shadow-sm" title="配置 GitHub 仓库直连同步">
+          <i data-lucide="cloud" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>仓库云存储</span>
           <span id="sync-indicator-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
         </button>
 
         <button id="btn-export-backup" class="hidden md:flex px-2.5 py-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 border border-white/5 text-xs text-gray-300 transition-all items-center gap-1" title="导出本地 JSON 备份文件">
-          <span>💾</span>
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
         </button>
         <button id="btn-import-backup" class="hidden md:flex px-2.5 py-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 border border-white/5 text-xs text-gray-300 transition-all items-center gap-1" title="导入 JSON 还原">
-          <span>📂</span>
+          <i data-lucide="upload" class="w-3.5 h-3.5"></i>
         </button>
         <input type="file" id="file-import-input" accept=".json" class="hidden">
       </div>
@@ -121,7 +123,7 @@
               </span>
               2027/2026 考研初试倒计时 · 研发式自包含系统
             </div>
-            <h2 class="text-xl sm:text-2xl font-extrabold text-white" id="quote-text">“把每一次攻克考点，当成一次功能上线。”</h2>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-white" id="quote-text">“把每一次攻克考点，当成一次系统功能上线。”</h2>
             <p class="text-xs text-gray-400 font-medium" id="quote-author">—— 极客考研共勉</p>
           </div>
 
@@ -155,7 +157,9 @@
             <p class="text-xs text-gray-400 mb-1">今日专注时长</p>
             <h3 class="text-2xl font-extrabold text-white font-mono"><span id="stat-today-minutes">0</span> <span class="text-sm font-normal text-gray-400">分钟</span></h3>
           </div>
-          <div class="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xl">⏱️</div>
+          <div class="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+            <i data-lucide="clock" class="w-5 h-5"></i>
+          </div>
         </div>
 
         <div class="glass-panel p-5 flex items-center justify-between">
@@ -163,7 +167,9 @@
             <p class="text-xs text-gray-400 mb-1">技能总等级 (Level)</p>
             <h3 class="text-2xl font-extrabold text-amber-400 font-mono" id="stat-total-skill-level">Lv. 0</h3>
           </div>
-          <div class="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xl">🌲</div>
+          <div class="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <i data-lucide="git-branch" class="w-5 h-5"></i>
+          </div>
         </div>
 
         <div class="glass-panel p-5 flex items-center justify-between">
@@ -171,7 +177,9 @@
             <p class="text-xs text-gray-400 mb-1">已掌握考点总数</p>
             <h3 class="text-2xl font-extrabold text-emerald-400 font-mono" id="stat-total-points">0/0</h3>
           </div>
-          <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl">🎯</div>
+          <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+          </div>
         </div>
 
         <div class="glass-panel p-5 flex items-center justify-between">
@@ -179,14 +187,17 @@
             <p class="text-xs text-gray-400 mb-1">错题 Issue Tracker</p>
             <h3 class="text-2xl font-extrabold text-rose-400 font-mono"><span id="stat-total-mistakes">0</span> <span class="text-sm font-normal text-gray-400">Issues</span></h3>
           </div>
-          <div class="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-xl">🐞</div>
+          <div class="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+            <i data-lucide="bug" class="w-5 h-5"></i>
+          </div>
         </div>
       </div>
 
       <div>
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <span>📚</span> 各科目备考进度全景
+            <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
+            <span>各科目备考进度全景</span>
           </h3>
           <span class="text-xs text-gray-400">点击卡片可快速跳转到对应大纲</span>
         </div>
@@ -196,31 +207,34 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="glass-panel p-5 flex items-center justify-between">
           <div>
-            <h4 class="font-bold text-white text-sm mb-1">✨ AI 结对研伴</h4>
+            <h4 class="font-bold text-white text-sm mb-1">AI 结对研伴</h4>
             <p class="text-xs text-gray-400">随时发问、考点抽测、代码 Review</p>
           </div>
-          <button onclick="app.toggleAICopilot()" class="btn-gradient px-3.5 py-2 rounded-xl text-xs font-semibold text-white whitespace-nowrap">
-            唤醒 AI
+          <button onclick="app.toggleAICopilot()" class="btn-gradient px-3.5 py-2 rounded-xl text-xs font-semibold text-white whitespace-nowrap flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>唤醒 AI</span>
           </button>
         </div>
 
         <div class="glass-panel p-5 flex items-center justify-between">
           <div>
-            <h4 class="font-bold text-white text-sm mb-1">💻 408 核心算法工作台</h4>
+            <h4 class="font-bold text-white text-sm mb-1">408 核心算法工作台</h4>
             <p class="text-xs text-gray-400">全量内置 C/C++ 算法与 PV 源码</p>
           </div>
-          <button onclick="app.switchTab('codebench')" class="px-3.5 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 text-xs font-semibold text-white whitespace-nowrap transition-all">
-            研读代码
+          <button onclick="app.switchTab('codebench')" class="px-3.5 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 text-xs font-semibold text-white whitespace-nowrap transition-all flex items-center gap-1">
+            <i data-lucide="code" class="w-3.5 h-3.5"></i>
+            <span>研读代码</span>
           </button>
         </div>
 
         <div class="glass-panel p-5 flex items-center justify-between">
           <div>
-            <h4 class="font-bold text-white text-sm mb-1">📊 生成今日复习日报</h4>
+            <h4 class="font-bold text-white text-sm mb-1">生成今日复习日报</h4>
             <p class="text-xs text-gray-400">一键导出 Markdown 格式总结</p>
           </div>
-          <button id="btn-export-report" class="px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 border border-white/10 text-xs font-semibold text-white whitespace-nowrap transition-all">
-            生成日报
+          <button id="btn-export-report" class="px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 border border-white/10 text-xs font-semibold text-white whitespace-nowrap transition-all flex items-center gap-1">
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+            <span>生成日报</span>
           </button>
         </div>
       </div>
@@ -232,7 +246,8 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              <span>🌲</span> 考研能力技能树 (Kaoyan Skill Trees)
+              <i data-lucide="git-branch" class="w-5 h-5 text-indigo-400"></i>
+              <span>考研能力技能树 (Kaoyan Skill Trees)</span>
             </h3>
             <p class="text-xs text-gray-400 mt-1">通过研读考点资料、完成番茄钟与攻克错题积累 EXP，升级专属考研硬核技能！</p>
           </div>
@@ -248,16 +263,17 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              <span>📖</span> 全科自包含备考手册 (100% 仓库内置，零外链依赖)
+              <i data-lucide="book-open" class="w-5 h-5 text-indigo-400"></i>
+              <span>全科自包含备考手册 (100% 仓库内置，零外链依赖)</span>
             </h3>
             <p class="text-xs text-gray-400 mt-1">包含高数泰勒与等价无穷小、408排序复杂度与PV模型、英语词根与写作句库、政治会议与答题大招。</p>
           </div>
           <div class="flex items-center gap-3">
             <select id="material-subject-select" class="px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none">
-              <option value="math">📐 考研数学公式宝典</option>
-              <option value="cs408">💻 计算机408核心速查</option>
-              <option value="english">🇬🇧 考研英语词根与写作句库</option>
-              <option value="politics">🇨🇳 思想政治大招与时间线</option>
+              <option value="math">考研数学公式宝典</option>
+              <option value="cs408">计算机408核心速查</option>
+              <option value="english">考研英语词根与写作句库</option>
+              <option value="politics">思想政治大招与时间线</option>
             </select>
           </div>
         </div>
@@ -271,13 +287,15 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              <span>💻</span> 408 核心算法与系统原语工作台 (Code Workbench)
+              <i data-lucide="code-2" class="w-5 h-5 text-cyan-400"></i>
+              <span>408 核心算法与系统原语工作台 (Code Workbench)</span>
             </h3>
             <p class="text-xs text-gray-400 mt-1">内置数据结构核心代码、操作系统 PV 经典模型与网络协议状态机，支持一键发送至 AI 伴学评审。</p>
           </div>
           <div class="flex items-center gap-2">
-            <button id="btn-add-custom-snippet" class="px-3.5 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/40 text-xs text-indigo-200 hover:text-white font-semibold transition-all">
-              <span>➕ 提交自定义算法代码</span>
+            <button id="btn-add-custom-snippet" class="px-3.5 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/40 text-xs text-indigo-200 hover:text-white font-semibold transition-all flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>提交自定义算法代码</span>
             </button>
           </div>
         </div>
@@ -291,7 +309,8 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              <span>🇬🇧</span> 英语 5500 核心词根抽认卡 (Flashcards)
+              <i data-lucide="layers" class="w-5 h-5 text-indigo-400"></i>
+              <span>英语 5500 核心词根抽认卡 (Flashcards)</span>
             </h3>
             <p class="text-xs text-gray-400 mt-1">点击卡片翻转查看释义与例句，掌握词根词缀助你轻松攻克 5500 大纲词汇！</p>
           </div>
@@ -309,7 +328,7 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div class="flex flex-wrap gap-2" id="outline-subject-tabs"></div>
           <div class="w-full md:w-72">
-            <input type="text" id="outline-search-input" placeholder="🔍 快速搜索考点关键字..." 
+            <input type="text" id="outline-search-input" placeholder="快速搜索考点关键字..." 
               class="w-full px-3.5 py-2 rounded-xl bg-gray-900/80 border border-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-xs text-gray-100 placeholder-gray-500 outline-none">
           </div>
         </div>
@@ -332,23 +351,24 @@
       <div class="glass-panel p-5 flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <select id="mistake-subject-filter" class="px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none">
-            <option value="all">📚 全学科错题</option>
-            <option value="politics">🇨🇳 思想政治理论</option>
-            <option value="english">🇬🇧 考研英语</option>
-            <option value="math">📐 考研数学</option>
-            <option value="cs408">💻 计算机408/专业课</option>
+            <option value="all">全学科错题</option>
+            <option value="politics">思想政治理论</option>
+            <option value="english">考研英语</option>
+            <option value="math">考研数学</option>
+            <option value="cs408">计算机408/专业课</option>
           </select>
           <select id="mistake-status-filter" class="px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none">
-            <option value="all">🔄 全部状态</option>
-            <option value="open">🔴 Open (未攻克)</option>
-            <option value="testing">🟡 Testing (二刷检验中)</option>
-            <option value="closed">🟢 Closed (已完全吃透)</option>
+            <option value="all">全部状态</option>
+            <option value="open">Open (待攻克)</option>
+            <option value="testing">Testing (二刷中)</option>
+            <option value="closed">Closed (已解决)</option>
           </select>
-          <input type="text" id="mistake-search-input" placeholder="🔍 检索错题/错因/标签..." 
+          <input type="text" id="mistake-search-input" placeholder="检索错题/错因/标签..." 
             class="px-3.5 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs text-gray-200 placeholder-gray-500 outline-none w-full md:w-56">
         </div>
         <button id="btn-new-mistake" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 w-full md:w-auto justify-center">
-          <span>➕ 提出新错题 Issue</span>
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>提出新错题 Issue</span>
         </button>
       </div>
       <div id="mistakes-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
@@ -359,7 +379,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 glass-panel p-8 flex flex-col items-center justify-center text-center">
           <span class="text-xs px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-semibold mb-4" id="pomo-mode-title">
-            🎯 专注模式 (25分钟)
+            专注模式 (25分钟)
           </span>
 
           <div class="relative w-60 h-60 flex items-center justify-center my-4">
@@ -381,31 +401,35 @@
 
           <div class="w-full max-w-sm flex gap-2 mb-6">
             <select id="pomo-subject-select" class="px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none">
-              <option value="math">📐 数学</option>
-              <option value="cs408">💻 408</option>
-              <option value="english">🇬🇧 英语</option>
-              <option value="politics">🇨🇳 政治</option>
+              <option value="math">数学</option>
+              <option value="cs408">408</option>
+              <option value="english">英语</option>
+              <option value="politics">政治</option>
             </select>
             <input type="text" id="pomo-task-input" placeholder="输入当前专注任务（完成后自动获得技能 EXP）" 
               class="flex-1 px-3.5 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs text-gray-200 placeholder-gray-500 outline-none">
           </div>
 
           <div class="flex items-center gap-3">
-            <button id="pomo-btn-start" class="btn-gradient px-8 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
-              ▶ 开始专注
+            <button id="pomo-btn-start" class="btn-gradient px-8 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg shadow-indigo-500/30 flex items-center gap-1.5">
+              <i data-lucide="play" class="w-4 h-4"></i>
+              <span>开始专注</span>
             </button>
-            <button id="pomo-btn-pause" class="px-8 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-sm font-bold text-white hidden">
-              ⏸ 暂停
+            <button id="pomo-btn-pause" class="px-8 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-sm font-bold text-white hidden flex items-center gap-1.5">
+              <i data-lucide="pause" class="w-4 h-4"></i>
+              <span>暂停</span>
             </button>
-            <button id="pomo-btn-reset" class="px-5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 border border-white/10 text-sm font-medium text-gray-300">
-              ↺ 重置
+            <button id="pomo-btn-reset" class="px-5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 border border-white/10 text-sm font-medium text-gray-300 flex items-center gap-1">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>重置</span>
             </button>
           </div>
         </div>
 
         <div class="glass-panel p-6">
           <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
-            <span>📋</span> 最近专注打卡记录
+            <i data-lucide="list" class="w-4 h-4 text-indigo-400"></i>
+            <span>最近专注打卡记录</span>
           </h4>
           <div id="pomo-logs-list" class="space-y-2.5"></div>
         </div>
@@ -418,7 +442,8 @@
         <div class="lg:col-span-2 glass-panel p-6">
           <div class="flex items-center justify-between mb-4">
             <h4 class="font-bold text-white text-sm flex items-center gap-2">
-              <span>🔥</span> 过去42天学习打卡热力图
+              <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i>
+              <span>过去42天学习打卡热力图</span>
             </h4>
             <div class="flex items-center gap-1.5 text-[10px] text-gray-400">
               <span>少</span>
@@ -437,7 +462,8 @@
 
         <div class="glass-panel p-6">
           <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
-            <span>⏱️</span> 各科目累计学习时长分布
+            <i data-lucide="pie-chart" class="w-4 h-4 text-indigo-400"></i>
+            <span>各科目累计学习时长分布</span>
           </h4>
           <div id="analytics-subject-bars"></div>
         </div>
@@ -451,42 +477,48 @@
     <!-- 头部 -->
     <div class="p-4 border-b border-white/10 flex items-center justify-between bg-gray-900/50">
       <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-sm shadow-md">
-          ✨
+        <div class="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-sm shadow-md">
+          <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i>
         </div>
         <div>
           <h3 class="text-sm font-bold text-white">AI 考研结对研伴</h3>
-          <p class="text-[10px] text-purple-300 font-mono">DeepSeek-V4-Flash · 研途伴侣</p>
+          <p class="text-[10px] text-purple-300 font-mono">DeepSeek-V4-Flash</p>
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <button id="btn-ai-settings" class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 text-xs" title="配置 API Key">⚙️</button>
-        <button id="btn-close-ai-copilot" class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 text-xs">✕</button>
+        <button id="btn-ai-settings" class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 text-xs" title="配置 API Key">
+          <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+        </button>
+        <button id="btn-close-ai-copilot" class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 text-xs">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
       </div>
     </div>
 
     <!-- 快捷伴学场景按钮 -->
     <div class="p-3 border-b border-white/5 flex gap-1.5 overflow-x-auto bg-gray-900/20">
       <button class="ai-quick-btn text-[11px] px-2.5 py-1 rounded-lg bg-indigo-950/50 hover:bg-indigo-900/60 border border-indigo-500/30 text-indigo-200 whitespace-nowrap transition-all" data-prompt="请从当前高数或408大纲中随机出一道高频真题选择题考考我，包含A/B/C/D四个选项。">
-        🎯 考点抽测
+        考点抽测
       </button>
       <button class="ai-quick-btn text-[11px] px-2.5 py-1 rounded-lg bg-purple-950/50 hover:bg-purple-900/60 border border-purple-500/30 text-purple-200 whitespace-nowrap transition-all" data-prompt="请用最通俗易懂的大白话和形象比喻，向我解释当前考点的核心本质与解题破局点。">
-        💡 思路点拨
+        思路点拨
       </button>
       <button class="ai-quick-btn text-[11px] px-2.5 py-1 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-500/30 text-emerald-200 whitespace-nowrap transition-all" data-prompt="请针对我错题本里的薄弱考点，出一道同类型的变式拓展题让我攻克。">
-        📝 错题变式
+        错题变式
       </button>
       <button class="ai-quick-btn text-[11px] px-2.5 py-1 rounded-lg bg-cyan-950/50 hover:bg-cyan-900/60 border border-cyan-500/30 text-cyan-200 whitespace-nowrap transition-all" data-prompt="请对 408 常见 C/C++ 算法的时间复杂度与空间复杂度进行专业评析，并指出容易写出 Bug 的边界条件。">
-        💻 代码Review
+        代码Review
       </button>
     </div>
 
     <!-- 消息对话流 -->
     <div id="ai-chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3.5 text-xs">
       <div class="flex items-start gap-2.5">
-        <div class="w-6 h-6 rounded-full bg-purple-600/30 text-purple-300 flex items-center justify-center shrink-0">✨</div>
+        <div class="w-6 h-6 rounded-full bg-purple-600/30 text-purple-300 flex items-center justify-center shrink-0">
+          <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+        </div>
         <div class="p-3 rounded-2xl bg-gray-900 border border-white/5 text-gray-200 leading-relaxed max-w-[85%]">
-          研友你好！我是你的 AI 考研结对研伴。无论是数学推导、408 算法代码、英语长难句还是政治大招，随时点上方快捷指令或直接在下方发问，我们一起并肩攻克！🎉
+          研友你好！我是你的 AI 考研结对研伴。无论是数学推导、408 算法代码、英语长难句还是政治大招，随时点上方快捷指令或直接在下方发问，我们一起并肩攻克！
         </div>
       </div>
     </div>
@@ -507,7 +539,8 @@
   <div id="modal-create-user" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="glass-panel p-6 w-full max-w-sm relative">
       <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2">
-        <span>👤</span> 创建新研友档案
+        <i data-lucide="user-plus" class="w-4 h-4 text-indigo-400"></i>
+        <span>创建新研友档案</span>
       </h3>
       <div class="space-y-3 mb-4">
         <div>
@@ -529,35 +562,38 @@
   <!-- 错题添加/编辑模态框 (Issue Tracker 模式) -->
   <div id="modal-mistake" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="glass-panel p-6 w-full max-w-lg relative">
-      <h3 class="text-base font-bold text-white mb-4">🐞 提出/更新错题 Issue</h3>
+      <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+        <i data-lucide="bug" class="w-4 h-4 text-rose-400"></i>
+        <span>提出/更新错题 Issue</span>
+      </h3>
       <form id="form-mistake" class="space-y-3.5">
         <input type="hidden" id="mistake-id-input">
         <div class="grid grid-cols-3 gap-3">
           <div>
             <label class="block text-xs text-gray-400 mb-1">科目分类</label>
             <select id="mistake-subject-input" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200">
-              <option value="math">📐 考研数学</option>
-              <option value="cs408">💻 计算机408</option>
-              <option value="english">🇬🇧 考研英语</option>
-              <option value="politics">🇨🇳 思想政治</option>
+              <option value="math">考研数学</option>
+              <option value="cs408">计算机408</option>
+              <option value="english">考研英语</option>
+              <option value="politics">思想政治</option>
             </select>
           </div>
           <div>
             <label class="block text-xs text-gray-400 mb-1">Issue 状态</label>
             <select id="mistake-status-input" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200">
-              <option value="open">🔴 Open (待攻克)</option>
-              <option value="testing">🟡 Testing (二刷中)</option>
-              <option value="closed">🟢 Closed (已解决)</option>
+              <option value="open">Open (待攻克)</option>
+              <option value="testing">Testing (二刷中)</option>
+              <option value="closed">Closed (已解决)</option>
             </select>
           </div>
           <div>
             <label class="block text-xs text-gray-400 mb-1">掌握度 (1-5星)</label>
             <select id="mistake-mastery-input" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200">
-              <option value="1">★☆☆☆☆ (初遇坑点)</option>
-              <option value="2">★★☆☆☆ (理解概念)</option>
-              <option value="3">★★★☆☆ (掌握解法)</option>
-              <option value="4">★★★★☆ (基本熟练)</option>
-              <option value="5">★★★★★ (完全吃透)</option>
+              <option value="1">1星 (初遇坑点)</option>
+              <option value="2">2星 (理解概念)</option>
+              <option value="3">3星 (掌握解法)</option>
+              <option value="4">4星 (基本熟练)</option>
+              <option value="5">5星 (完全吃透)</option>
             </select>
           </div>
         </div>
@@ -597,12 +633,18 @@
   <!-- 复习日报模态框 -->
   <div id="modal-report" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="glass-panel p-6 w-full max-w-xl relative">
-      <h3 class="text-base font-bold text-white mb-2">📊 考研工程复习日报 (Markdown 格式)</h3>
+      <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+        <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
+        <span>考研工程复习日报 (Markdown 格式)</span>
+      </h3>
       <p class="text-xs text-gray-400 mb-3">支持一键复制到语雀、Notion、Obsidian 或考研打卡群。</p>
       <textarea id="report-content" rows="12" class="w-full p-3 rounded-lg bg-gray-900 border border-gray-700 text-xs font-mono text-gray-200 outline-none"></textarea>
       <div class="flex justify-end gap-2 mt-4">
         <button id="btn-close-report" class="px-4 py-2 rounded-lg bg-gray-800 text-xs text-gray-300">关闭</button>
-        <button id="btn-copy-report" class="btn-gradient px-5 py-2 rounded-lg text-xs font-semibold text-white">📋 复制 Markdown</button>
+        <button id="btn-copy-report" class="btn-gradient px-5 py-2 rounded-lg text-xs font-semibold text-white flex items-center gap-1">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>复制 Markdown</span>
+        </button>
       </div>
     </div>
   </div>
@@ -612,18 +654,22 @@
     <div class="glass-panel p-6 w-full max-w-2xl max-h-[85vh] overflow-y-auto relative">
       <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
         <div class="flex items-center gap-2">
-          <span class="text-xl">📖</span>
+          <i data-lucide="book-open" class="w-5 h-5 text-indigo-400"></i>
           <h3 class="text-base font-bold text-white" id="study-point-title">考点深度精讲</h3>
         </div>
-        <button id="btn-close-point-study" class="text-gray-400 hover:text-white p-1">✕</button>
+        <button id="btn-close-point-study" class="text-gray-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
       </div>
       <div id="study-point-body" class="markdown-body text-xs text-gray-300 space-y-3 mb-6"></div>
       <div class="flex items-center justify-between pt-3 border-t border-white/10">
         <button id="btn-ask-ai-this-point" class="px-3.5 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600 text-xs font-semibold text-purple-200 hover:text-white border border-purple-500/40 flex items-center gap-1.5">
-          <span>✨ 让 AI 抽测本考点</span>
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <span>让 AI 抽测本考点</span>
         </button>
-        <button id="btn-complete-point-study" class="btn-gradient px-5 py-2 rounded-xl text-xs font-bold text-white shadow-lg shadow-indigo-500/25">
-          ✅ 已认真研读 (+50 EXP)
+        <button id="btn-complete-point-study" class="btn-gradient px-5 py-2 rounded-xl text-xs font-bold text-white shadow-lg shadow-indigo-500/25 flex items-center gap-1">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i>
+          <span>已认真研读 (+50 EXP)</span>
         </button>
       </div>
     </div>
@@ -634,16 +680,19 @@
     <div class="glass-panel p-6 w-full max-w-lg relative">
       <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
         <div class="flex items-center gap-2">
-          <span class="text-xl">☁️</span>
+          <i data-lucide="cloud" class="w-5 h-5 text-indigo-400"></i>
           <h3 class="text-base font-bold text-white">GitHub 仓库直连云存储 (Git-as-Database)</h3>
         </div>
-        <button id="btn-close-github-sync" class="text-gray-400 hover:text-white p-1">✕</button>
+        <button id="btn-close-github-sync" class="text-gray-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
       </div>
       
       <div class="space-y-4 text-xs text-gray-300 mb-6">
         <div class="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-500/20 text-indigo-200 leading-relaxed">
           <p class="font-bold mb-1 flex items-center gap-1.5">
-            <span>✨</span> 多用户云存储模式：当前用户 <code id="gh-sync-user-badge" class="text-amber-300">caixuf</code>
+            <i data-lucide="database" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>多用户云存储模式：当前用户 <code id="gh-sync-user-badge" class="text-amber-300">caixuf</code></span>
           </p>
           <p>数据将保存至仓库的 <code id="gh-sync-file-path">data/users/caixuf.json</code>。不同用户的数据彼此独立，互相不冲突！</p>
         </div>
@@ -656,7 +705,7 @@
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="block text-gray-400 font-semibold">GitHub Personal Access Token (PAT 密钥)</label>
-            <a href="https://github.com/settings/tokens" target="_blank" class="text-indigo-400 hover:underline">创建 Token ↗</a>
+            <a href="https://github.com/settings/tokens" target="_blank" class="text-indigo-400 hover:underline">创建 Token</a>
           </div>
           <input type="password" id="gh-token-input" placeholder="ghp_************************************" class="w-full px-3.5 py-2 rounded-lg bg-gray-900 border border-gray-700 font-mono text-gray-200 outline-none">
           <p class="text-[11px] text-gray-500 mt-1">仅需勾选 <code>repo</code> 权限。Token 仅加密缓存在您当前浏览器本地，绝不泄露。</p>
@@ -678,10 +727,12 @@
 
       <div class="flex items-center justify-between pt-3 border-t border-white/10">
         <button id="btn-pull-from-github" class="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-semibold text-gray-200 border border-white/10 flex items-center gap-1.5">
-          <span>⬇️ 从仓库拉取数据</span>
+          <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5"></i>
+          <span>从仓库拉取数据</span>
         </button>
         <button id="btn-push-to-github" class="btn-gradient px-5 py-2 rounded-xl text-xs font-bold text-white shadow-lg shadow-indigo-500/25 flex items-center gap-1.5">
-          <span>⬆️ 立即提交到仓库</span>
+          <i data-lucide="arrow-up-circle" class="w-3.5 h-3.5"></i>
+          <span>立即提交到仓库</span>
         </button>
       </div>
     </div>
