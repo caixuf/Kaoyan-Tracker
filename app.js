@@ -1,17 +1,17 @@
-// 考研备考、技能树与多用户 GitHub 仓库云存储系统 (Kaoyan-Tracker 3.5) 核心逻辑
+// 考研备考、AI 结对研伴与多用户 GitHub 仓库云存储系统 (Kaoyan-Tracker 4.0) 核心逻辑
 
 const MOTIVATION_QUOTES = [
+  { text: "把每一次攻克考点，当成一次系统功能上线。", author: "极客考研共勉" },
   { text: "星光不问赶路人，时光不负有心人。", author: "考研寄语" },
   { text: "研途虽苦，但终点繁花似锦。每一分努力都在为未来铺路。", author: "研友共勉" },
   { text: "耐得住寂寞，才能守得住繁华。沉心静气，按部就班。", author: "上岸指南" },
-  { text: "种一棵树最好的时间是十年前，其次是现在。坚持每一天的专注！", author: "每日能量" },
   { text: "那些看似波澜不惊的日复一日，终会在某一天看到坚持的意义。", author: "考研打卡" },
   { text: "乾坤未定，你我皆是黑马；既然选择了远方，便只顾风雨兼程。", author: "研途金句" }
 ];
 
 const DEFAULT_EXAM_DATE = "2026-12-26T08:30:00";
-const USERS_LIST_KEY = "kaoyan_users_registry_v3";
-const ACTIVE_USER_KEY = "kaoyan_active_user_v3";
+const USERS_LIST_KEY = "kaoyan_users_registry_v4";
+const ACTIVE_USER_KEY = "kaoyan_active_user_v4";
 
 class KaoyanApp {
   constructor() {
@@ -29,12 +29,21 @@ class KaoyanApp {
     this.activeOutlineSubject = "politics";
     this.activeMaterialSubject = "math";
     this.mistakeFilterSubject = "all";
+    this.mistakeFilterStatus = "all";
     this.mistakeSearchQuery = "";
     this.currentStudyingPoint = null;
+
+    // AI 研伴配置
+    this.aiConfig = {
+      apiKey: localStorage.getItem("kaoyan_ai_apikey") || "9kwrsnjfFRcSHOp2R0Ol",
+      baseUrl: localStorage.getItem("kaoyan_ai_baseurl") || "https://api-inference.bitdeer.ai/v1",
+      model: localStorage.getItem("kaoyan_ai_model") || "deepseek-ai/DeepSeek-V4-Flash"
+    };
 
     this.initDOM();
     this.initEvents();
     this.initUserMenu();
+    this.initAICopilot();
     this.startCountdown();
     this.initGitHubSync();
     this.render();
@@ -84,6 +93,7 @@ class KaoyanApp {
         {
           id: "m-1",
           subject: "math",
+          status: "open",
           title: "洛必达法则与等价无穷小代换的误用",
           question: "求 limit (x->0) (x - sin x) / (x * (1 - cos x))",
           wrongReason: "分子直接对单项代换造成精度丢失，导致求得结果为0。",
@@ -91,10 +101,23 @@ class KaoyanApp {
           tags: ["泰勒展开", "极限计算", "高数重点"],
           mastery: 2,
           date: "2026-08-25"
+        },
+        {
+          id: "m-2",
+          subject: "cs408",
+          status: "testing",
+          title: "快速排序最坏时间复杂度与递归深度",
+          question: "什么情况下快速排序退化为 O(n^2)？如何优化？",
+          wrongReason: "混淆了最好情况与最坏情况的基准选择。",
+          solution: "当待排序序列已经基本有序或完全逆序时，每次选取的基准只能划分出长度为 0 和 n-1 的子表，递归树高度变为 n，时间复杂度退化为 O(n^2)。优化方法：三数取中法、随机选取基准法、结合插入排序。",
+          tags: ["数据结构", "排序算法", "复杂度分析"],
+          mastery: 3,
+          date: "2026-08-25"
         }
       ],
       logs: [
-        { date: "2026-08-25", minutes: 120, subject: "math", note: "完成高数第一章极限题型训练" }
+        { date: "2026-08-25", minutes: 120, subject: "math", note: "完成高数第一章极限题型训练" },
+        { date: "2026-08-25", minutes: 45, subject: "english", note: "背诵高频词汇与长难句拆解" }
       ]
     };
   }
@@ -116,7 +139,7 @@ class KaoyanApp {
     this.triggerAutoSync();
   }
 
-  // =================== 多用户管理逻辑 ===================
+  // =================== 多用户管理 ===================
 
   initUserMenu() {
     this.renderUserDropdown();
@@ -199,7 +222,6 @@ class KaoyanApp {
     this.renderUserDropdown();
     this.render();
 
-    // 重新连接 GitHub 同步该用户的数据文件
     if (this.ghConfig && this.ghConfig.token) {
       this.pullFromGitHub(false);
     } else {
@@ -220,6 +242,132 @@ class KaoyanApp {
     }
   }
 
+  // =================== AI 结对研伴 (AI Pair-Learning Copilot) ===================
+
+  initAICopilot() {
+    this.elements.btnToggleAICopilot.addEventListener("click", () => this.toggleAICopilot());
+    this.elements.btnCloseAICopilot.addEventListener("click", () => this.toggleAICopilot(false));
+
+    this.elements.btnAISend.addEventListener("click", () => this.sendAIMessage());
+    this.elements.aiChatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        this.sendAIMessage();
+      }
+    });
+
+    document.querySelectorAll(".ai-quick-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const prompt = btn.dataset.prompt;
+        this.elements.aiChatInput.value = prompt;
+        this.sendAIMessage();
+      });
+    });
+
+    this.elements.btnAISettings.addEventListener("click", () => {
+      const key = prompt("请输入您的 AI API Key (Bitdeer / DeepSeek / OpenAI 兼容格式)：", this.aiConfig.apiKey);
+      if (key !== null) {
+        this.aiConfig.apiKey = key.trim();
+        localStorage.setItem("kaoyan_ai_apikey", this.aiConfig.apiKey);
+        alert("AI API Key 已更新并保存在本地！");
+      }
+    });
+  }
+
+  toggleAICopilot(forceOpen = null) {
+    const drawer = this.elements.drawerAICopilot;
+    if (forceOpen === true) {
+      drawer.classList.remove("translate-x-full");
+    } else if (forceOpen === false) {
+      drawer.classList.add("translate-x-full");
+    } else {
+      drawer.classList.toggle("translate-x-full");
+    }
+  }
+
+  askAIWithPrompt(promptText) {
+    this.toggleAICopilot(true);
+    this.elements.aiChatInput.value = promptText;
+    this.sendAIMessage();
+  }
+
+  async sendAIMessage() {
+    const text = this.elements.aiChatInput.value.trim();
+    if (!text) return;
+
+    this.appendChatMessage("user", text);
+    this.elements.aiChatInput.value = "";
+
+    const loadingId = "ai-loading-" + Date.now();
+    this.appendChatMessage("ai", `<span id="${loadingId}" class="inline-flex items-center gap-1.5 text-purple-300">
+      <span class="animate-spin text-sm">✦</span> 正在深度思考并生成考研解答...
+    </span>`);
+
+    try {
+      let reply = "";
+      if (this.aiConfig.apiKey) {
+        const res = await fetch(`${this.aiConfig.baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${this.aiConfig.apiKey}`
+          },
+          body: JSON.stringify({
+            model: this.aiConfig.model,
+            messages: [
+              {
+                role: "system",
+                content: "你是一位专业、耐心的顶级考研名师与AI结对研伴，精通计算机408（数据结构、计组、操作系统、计网）、考研数学（高数、线代、概率）、考研英语与思想政治。请用条理清晰、言简意赅、充满鼓励的方式回答用户的考研问题，格式使用易读的 Markdown。"
+              },
+              { role: "user", content: text }
+            ],
+            temperature: 0.7,
+            max_tokens: 1500
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          reply = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : "AI 返回了空内容";
+        } else {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+      } else {
+        // 本地离线启发式模拟研伴
+        reply = `### 💡 研伴思路解析\n针对您提出的问题：**「${text}」**\n\n1. **核心概念定位**：本问题属于考研高频重难点，命题人通常在此处设置反直觉选项或边界陷阱。\n2. **标准破局步骤**：先理清定义域/前置条件，然后应用标准套路展开推导。\n3. **学长建议**：建议将此题记录到【错题 Tracker】中，并在今晚复盘时重新手写一遍推导过程！✨`;
+      }
+
+      const loadElem = document.getElementById(loadingId);
+      if (loadElem && loadElem.parentElement) {
+        loadElem.parentElement.innerHTML = marked.parse(reply);
+      }
+    } catch (err) {
+      const loadElem = document.getElementById(loadingId);
+      if (loadElem && loadElem.parentElement) {
+        loadElem.parentElement.innerHTML = `<span class="text-rose-400">调用 AI 失败 (${err.message})。请点击右上角 ⚙️ 检查您的 API Key 配置。</span>`;
+      }
+    }
+  }
+
+  appendChatMessage(role, content) {
+    const isUser = role === "user";
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : ''}`;
+    
+    msgDiv.innerHTML = `
+      <div class="w-6 h-6 rounded-full ${isUser ? 'bg-indigo-600 text-white' : 'bg-purple-600/30 text-purple-300'} flex items-center justify-center shrink-0 text-xs font-bold">
+        ${isUser ? '👤' : '✨'}
+      </div>
+      <div class="p-3 rounded-2xl ${isUser ? 'bg-indigo-600/30 text-indigo-100 border border-indigo-500/30' : 'bg-gray-900 border border-white/5 text-gray-200'} leading-relaxed max-w-[85%] markdown-body">
+        ${isUser ? content : marked.parse(content)}
+      </div>
+    `;
+    this.elements.aiChatMessages.appendChild(msgDiv);
+    this.elements.aiChatMessages.scrollTop = this.elements.aiChatMessages.scrollHeight;
+  }
+
+  // =================== DOM 与 事件绑定 ===================
+
   initDOM() {
     this.elements = {
       tabs: document.querySelectorAll(".tab-btn"),
@@ -235,6 +383,14 @@ class KaoyanApp {
       newUserSchoolInput: document.getElementById("new-user-school-input"),
       btnCancelCreateUser: document.getElementById("btn-cancel-create-user"),
       btnConfirmCreateUser: document.getElementById("btn-confirm-create-user"),
+
+      btnToggleAICopilot: document.getElementById("btn-toggle-ai-copilot"),
+      drawerAICopilot: document.getElementById("drawer-ai-copilot"),
+      btnCloseAICopilot: document.getElementById("btn-close-ai-copilot"),
+      btnAISettings: document.getElementById("btn-ai-settings"),
+      aiChatMessages: document.getElementById("ai-chat-messages"),
+      aiChatInput: document.getElementById("ai-chat-input"),
+      btnAISend: document.getElementById("btn-ai-send"),
 
       cdDays: document.getElementById("cd-days"),
       cdHours: document.getElementById("cd-hours"),
@@ -255,7 +411,10 @@ class KaoyanApp {
       materialSubjectSelect: document.getElementById("material-subject-select"),
       materialsContainer: document.getElementById("materials-container"),
       
-      awesomeContainer: document.getElementById("awesome-resources-container"),
+      codebenchContainer: document.getElementById("codebench-snippets-container"),
+      btnAddCustomSnippet: document.getElementById("btn-add-custom-snippet"),
+
+      flashcardsContainer: document.getElementById("flashcards-container"),
 
       outlineSubjectTabs: document.getElementById("outline-subject-tabs"),
       outlineChaptersContainer: document.getElementById("outline-chapters-container"),
@@ -266,6 +425,7 @@ class KaoyanApp {
       mistakesContainer: document.getElementById("mistakes-list"),
       mistakeSearchInput: document.getElementById("mistake-search-input"),
       mistakeSubjectFilter: document.getElementById("mistake-subject-filter"),
+      mistakeStatusFilter: document.getElementById("mistake-status-filter"),
       btnNewMistake: document.getElementById("btn-new-mistake"),
       modalMistake: document.getElementById("modal-mistake"),
       formMistake: document.getElementById("form-mistake"),
@@ -296,6 +456,7 @@ class KaoyanApp {
       studyPointBody: document.getElementById("study-point-body"),
       btnClosePointStudy: document.getElementById("btn-close-point-study"),
       btnCompletePointStudy: document.getElementById("btn-complete-point-study"),
+      btnAskAIThisPoint: document.getElementById("btn-ask-ai-this-point"),
 
       btnOpenGithubSync: document.getElementById("btn-open-github-sync"),
       modalGithubSync: document.getElementById("modal-github-sync"),
@@ -359,6 +520,11 @@ class KaoyanApp {
       this.renderMistakes();
     });
 
+    this.elements.mistakeStatusFilter.addEventListener("change", (e) => {
+      this.mistakeFilterStatus = e.target.value;
+      this.renderMistakes();
+    });
+
     this.elements.mistakeSearchInput.addEventListener("input", (e) => {
       this.mistakeSearchQuery = e.target.value.trim().toLowerCase();
       this.renderMistakes();
@@ -380,6 +546,7 @@ class KaoyanApp {
       e.preventDefault();
       const idInput = document.getElementById("mistake-id-input").value;
       const subject = document.getElementById("mistake-subject-input").value;
+      const status = document.getElementById("mistake-status-input").value;
       const title = document.getElementById("mistake-title-input").value.trim();
       const question = document.getElementById("mistake-question-input").value.trim();
       const wrongReason = document.getElementById("mistake-wrong-input").value.trim();
@@ -391,6 +558,7 @@ class KaoyanApp {
         const item = this.state.mistakes.find(m => m.id === idInput);
         if (item) {
           item.subject = subject;
+          item.status = status;
           item.title = title;
           item.question = question;
           item.wrongReason = wrongReason;
@@ -400,8 +568,9 @@ class KaoyanApp {
         }
       } else {
         const newMistake = {
-          id: "m-" + Date.now(),
+          id: "issue-" + Date.now(),
           subject,
+          status,
           title,
           question,
           wrongReason,
@@ -434,7 +603,7 @@ class KaoyanApp {
     });
     this.elements.btnCopyReport.addEventListener("click", () => {
       navigator.clipboard.writeText(this.elements.reportContent.value).then(() => {
-        alert("复习日报 Markdown 已成功复制到剪贴板！");
+        alert("复习工程日报 Markdown 已成功复制到剪贴板！");
       });
     });
 
@@ -451,6 +620,24 @@ class KaoyanApp {
         alert("🎉 考点研读完成！已为对应技能增加 +50 EXP 经验值！");
       }
     });
+
+    this.elements.btnAskAIThisPoint.addEventListener("click", () => {
+      if (this.currentStudyingPoint) {
+        const prompt = `请针对考点【${this.currentStudyingPoint.pointTitle}】出一道高频真题考研抽测题，包含 A/B/C/D 选项并在我作答后进行解析。`;
+        this.elements.modalPointStudy.classList.add("hidden");
+        this.elements.modalPointStudy.classList.remove("flex");
+        this.askAIWithPrompt(prompt);
+      }
+    });
+
+    if (this.elements.btnAddCustomSnippet) {
+      this.elements.btnAddCustomSnippet.addEventListener("click", () => {
+        const title = prompt("请输入算法/模型标题（如：Dijkstra 堆优化实现）：");
+        if (title) {
+          this.askAIWithPrompt(`请为我生成【${title}】的完整 408 标准 C/C++ 实现代码与时空复杂度分析。`);
+        }
+      });
+    }
   }
 
   // =================== 多用户 GitHub 仓库云存储同步核心 (Git-as-Database) ===================
@@ -555,7 +742,6 @@ class KaoyanApp {
 
       if (!res.ok) {
         if (res.status === 404) {
-          // 该新用户在远程尚无文件，提示推送到远程
           this.elements.ghSyncStatusText.innerText = `远程尚无此用户文件，请点击提交`;
           if (showToast) alert(`用户【${this.currentUser}】在仓库中尚无文件，点击「立即提交到仓库」即可自动创建！`);
           return;
@@ -598,7 +784,6 @@ class KaoyanApp {
     try {
       this.elements.ghSyncStatusText.innerText = `正在提交 [${this.currentUser}] 到仓库...`;
 
-      // 获取当前用户文件的 SHA
       let currentSha = this.ghConfig.fileSha;
       const getRes = await fetch(`https://api.github.com/repos/${this.ghConfig.repo}/contents/${userPath}`, {
         headers: {
@@ -684,7 +869,8 @@ class KaoyanApp {
 
     if (tabId === "skills") this.renderSkillTree();
     if (tabId === "materials") this.renderMaterials();
-    if (tabId === "awesome") this.renderAwesomeResources();
+    if (tabId === "codebench") this.renderCodeWorkbench();
+    if (tabId === "flashcards") this.renderFlashcards();
     if (tabId === "outline") this.renderOutline();
     if (tabId === "mistakes") this.renderMistakes();
     if (tabId === "pomodoro") this.renderPomodoroLogs();
@@ -900,49 +1086,97 @@ class KaoyanApp {
     this.elements.materialsContainer.innerHTML = html;
   }
 
-  renderAwesomeResources() {
-    const container = this.elements.awesomeContainer;
+  // =================== 408 核心算法工作台 ===================
+
+  renderCodeWorkbench() {
+    const container = this.elements.codebenchContainer;
     if (!container) return;
 
     let html = "";
-    AWESOME_RESOURCES.forEach(cat => {
-      let cardsHtml = "";
-      cat.items.forEach(item => {
-        cardsHtml += `
-          <div class="glass-card p-5 flex flex-col justify-between hover:border-indigo-500/50">
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-xs px-2.5 py-0.5 rounded-full bg-${cat.color}-500/10 text-${cat.color}-400 font-mono border border-${cat.color}-500/20 font-bold">
-                  ${item.stars}
-                </span>
-                <span class="text-[11px] text-gray-500 font-mono">by @${item.author}</span>
-              </div>
-              <h4 class="font-bold text-white text-sm mb-1">${item.name}</h4>
-              <p class="text-xs text-gray-300 leading-relaxed mb-3">${item.desc}</p>
-              
-              <div class="flex flex-wrap gap-1.5 mb-4">
-                ${item.tags.map(t => `<span class="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400">#${t}</span>`).join("")}
-              </div>
-            </div>
-
-            <div class="pt-3 border-t border-white/5 flex items-center justify-between">
-              <span class="text-[11px] text-gray-500 font-mono">${item.repo}</span>
-              <a href="${item.url}" target="_blank" rel="noopener noreferrer" 
-                class="px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-xs font-semibold text-indigo-300 hover:text-white border border-indigo-500/40 transition-all flex items-center gap-1">
-                <span>直达 GitHub</span> ↗
-              </a>
-            </div>
-          </div>
-        `;
-      });
-
+    CS408_CODE_SNIPPETS.forEach(snip => {
       html += `
-        <div>
-          <h4 class="text-base font-bold text-gray-100 flex items-center gap-2 mb-3">
-            <span>${cat.categoryName}</span>
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            ${cardsHtml}
+        <div class="glass-panel p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20">
+                ${snip.category}
+              </span>
+              <button onclick="app.askAIAboutCode('${snip.id}')" class="text-xs text-purple-300 hover:text-white px-2.5 py-1 rounded-lg bg-purple-600/30 hover:bg-purple-600 border border-purple-500/30 flex items-center gap-1 transition-all">
+                <span>✨ AI 评审与复杂度分析</span>
+              </button>
+            </div>
+            <h4 class="font-bold text-white text-sm mb-1">${snip.title}</h4>
+            <p class="text-xs text-gray-400 mb-3">${snip.desc}</p>
+            <pre class="code-block">${this.escapeHtml(snip.code)}</pre>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-gray-400">
+            <span>语言: ${snip.language.toUpperCase()}</span>
+            <button onclick="navigator.clipboard.writeText(\`${snip.code.replace(/`/g, '\\`')}\`); alert('代码已复制到剪贴板！');" class="text-indigo-400 hover:underline">
+              📋 复制代码
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  askAIAboutCode(snippetId) {
+    const snip = CS408_CODE_SNIPPETS.find(s => s.id === snippetId);
+    if (!snip) return;
+    const prompt = `请对 408 算法【${snip.title}】的代码进行专业 Code Review：\n1. 时间与空间复杂度推导\n2. 容易在真题大题中丢分的边界条件陷阱\n3. 历年真题出现过的同类变式题。\n\n源码如下：\n\`\`\`${snip.language}\n${snip.code}\n\`\`\``;
+    this.askAIWithPrompt(prompt);
+  }
+
+  escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // =================== 英语词根抽认卡 ===================
+
+  renderFlashcards() {
+    const container = this.elements.flashcardsContainer;
+    if (!container) return;
+
+    let html = "";
+    ENGLISH_VOCAB_CARDS.forEach(card => {
+      html += `
+        <div class="flashcard-wrapper h-64" onclick="this.classList.toggle('flipped')">
+          <div class="flashcard-inner relative w-full h-full">
+            <!-- 正面 -->
+            <div class="flashcard-front absolute inset-0 glass-panel p-6 flex flex-col justify-between border-indigo-500/30">
+              <div class="flex items-center justify-between">
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono">核心词根</span>
+                <span class="text-[11px] text-gray-400">👆 点击翻转</span>
+              </div>
+              <div class="text-center my-auto">
+                <h3 class="text-2xl font-extrabold text-white font-mono tracking-wide">${card.root}</h3>
+                <p class="text-xs text-indigo-300 mt-2 font-medium">${card.meaning}</p>
+              </div>
+              <div class="text-center text-[11px] text-gray-500">
+                包含 ${card.examples.length} 个考研高频真题大纲词
+              </div>
+            </div>
+
+            <!-- 背面 -->
+            <div class="flashcard-back absolute inset-0 glass-panel p-5 flex flex-col justify-between border-purple-500/30 overflow-y-auto">
+              <div class="flex items-center justify-between pb-2 border-b border-white/5">
+                <span class="text-xs font-bold text-purple-300 font-mono">${card.root}</span>
+                <span class="text-[10px] text-emerald-400 cursor-pointer" onclick="event.stopPropagation(); app.addSkillExp('english', 30); alert('已完成该词根卡片学习！+30 EXP');">✅ 标记掌握</span>
+              </div>
+              <div class="space-y-2 text-xs my-auto">
+                ${card.examples.map(ex => `
+                  <div class="p-2 rounded bg-gray-900/60 border border-white/5">
+                    <div class="flex items-center gap-1.5 font-semibold text-gray-100">
+                      <span>${ex.word}</span>
+                      <span class="text-[10px] text-indigo-400 font-normal font-mono">${ex.pos}</span>
+                      <span class="text-gray-300 text-[11px] font-normal">${ex.def}</span>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-0.5 italic">"${ex.sentence}"</p>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -950,6 +1184,8 @@ class KaoyanApp {
 
     container.innerHTML = html;
   }
+
+  // =================== 考点大纲与沉浸精讲 ===================
 
   renderOutline(searchKeyword = "") {
     let tabHtml = "";
@@ -1049,11 +1285,17 @@ class KaoyanApp {
     this.renderOutline(this.elements.outlineSearchInput.value.trim().toLowerCase());
   }
 
+  // =================== 错题 Issue Tracker ===================
+
   renderMistakes() {
     let filtered = this.state.mistakes;
 
     if (this.mistakeFilterSubject !== "all") {
       filtered = filtered.filter(m => m.subject === this.mistakeFilterSubject);
+    }
+
+    if (this.mistakeFilterStatus !== "all") {
+      filtered = filtered.filter(m => (m.status || "open") === this.mistakeFilterStatus);
     }
 
     if (this.mistakeSearchQuery) {
@@ -1068,8 +1310,8 @@ class KaoyanApp {
     if (filtered.length === 0) {
       this.elements.mistakesContainer.innerHTML = `
         <div class="glass-panel p-12 text-center text-gray-500 col-span-full">
-          <p class="text-4xl mb-3">📝</p>
-          <p class="text-sm">暂无错题记录，点击右上角「记录新错题」开始积累吧！</p>
+          <p class="text-4xl mb-3">🐞</p>
+          <p class="text-sm">暂无匹配的错题 Issue，点击右上角「提出新错题 Issue」开始追踪！</p>
         </div>
       `;
       return;
@@ -1082,18 +1324,28 @@ class KaoyanApp {
       cs408: { name: "408/专业课", color: "indigo" }
     };
 
+    const statusBadgeMap = {
+      open: `<span class="px-2 py-0.5 rounded text-[10px] font-mono issue-badge-open">🔴 Open</span>`,
+      testing: `<span class="px-2 py-0.5 rounded text-[10px] font-mono issue-badge-testing">🟡 Testing (二刷)</span>`,
+      closed: `<span class="px-2 py-0.5 rounded text-[10px] font-mono issue-badge-closed">🟢 Closed (已攻克)</span>`
+    };
+
     let html = "";
     filtered.forEach(item => {
       const subInfo = subjectMap[item.subject] || { name: item.subject, color: "gray" };
       const stars = "★".repeat(item.mastery) + "☆".repeat(5 - item.mastery);
+      const st = item.status || "open";
 
       html += `
         <div class="glass-card p-5 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-3">
-              <span class="text-xs px-2.5 py-0.5 rounded-full bg-${subInfo.color}-500/10 text-${subInfo.color}-400 font-semibold border border-${subInfo.color}-500/20">
-                ${subInfo.name}
-              </span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-${subInfo.color}-500/10 text-${subInfo.color}-400 font-semibold border border-${subInfo.color}-500/20">
+                  ${subInfo.name}
+                </span>
+                ${statusBadgeMap[st] || statusBadgeMap.open}
+              </div>
               <span class="text-amber-400 font-mono text-xs" title="掌握熟练度: ${item.mastery}/5 星">${stars}</span>
             </div>
             <h4 class="font-bold text-gray-100 text-base mb-2">${item.title}</h4>
@@ -1104,12 +1356,12 @@ class KaoyanApp {
             </div>
 
             <div class="mb-3 p-3 rounded-lg bg-red-950/20 border border-red-500/20 text-xs text-rose-300">
-              <p class="font-semibold text-rose-400 mb-1">【错因剖析】</p>
+              <p class="font-semibold text-rose-400 mb-1">【Bug 剖析 / 陷阱】</p>
               <p class="whitespace-pre-wrap">${item.wrongReason}</p>
             </div>
 
             <div class="mb-3 p-3 rounded-lg bg-emerald-950/20 border border-emerald-500/20 text-xs text-emerald-300">
-              <p class="font-semibold text-emerald-400 mb-1">【正确思路 / 解析】</p>
+              <p class="font-semibold text-emerald-400 mb-1">【Fix Solution / 正确思路】</p>
               <p class="whitespace-pre-wrap">${item.solution}</p>
             </div>
 
@@ -1120,7 +1372,8 @@ class KaoyanApp {
 
           <div class="flex items-center justify-between pt-3 border-t border-white/5 text-xs text-gray-500">
             <span>记录于 ${item.date}</span>
-            <div class="flex gap-3">
+            <div class="flex gap-3 items-center">
+              <button onclick="app.askAIAssistantForMistake('${item.id}')" class="text-purple-400 hover:text-purple-300 font-medium">✨ AI 变式题</button>
               <button onclick="app.editMistake('${item.id}')" class="text-indigo-400 hover:text-indigo-300 font-medium">编辑</button>
               <button onclick="app.deleteMistake('${item.id}')" class="text-rose-400 hover:text-rose-300 font-medium">删除</button>
             </div>
@@ -1132,12 +1385,20 @@ class KaoyanApp {
     this.elements.mistakesContainer.innerHTML = html;
   }
 
+  askAIAssistantForMistake(id) {
+    const item = this.state.mistakes.find(m => m.id === id);
+    if (!item) return;
+    const prompt = `针对我错题本里的这道题【${item.title}】：\n- 原题：${item.question}\n- 错误原因：${item.wrongReason}\n- 正解：${item.solution}\n\n请帮我分析为何会犯这个错误，并出一道同考点的考研变式题让我现场做一遍！`;
+    this.askAIWithPrompt(prompt);
+  }
+
   editMistake(id) {
     const item = this.state.mistakes.find(m => m.id === id);
     if (!item) return;
 
     document.getElementById("mistake-id-input").value = item.id;
     document.getElementById("mistake-subject-input").value = item.subject;
+    document.getElementById("mistake-status-input").value = item.status || "open";
     document.getElementById("mistake-title-input").value = item.title;
     document.getElementById("mistake-question-input").value = item.question || "";
     document.getElementById("mistake-wrong-input").value = item.wrongReason || "";
@@ -1150,12 +1411,14 @@ class KaoyanApp {
   }
 
   deleteMistake(id) {
-    if (confirm("确定要删除这道错题记录吗？")) {
+    if (confirm("确定要删除这道错题 Issue 吗？")) {
       this.state.mistakes = this.state.mistakes.filter(m => m.id !== id);
       this.saveState();
       this.renderMistakes();
     }
   }
+
+  // =================== 番茄钟 ===================
 
   startPomodoro() {
     if (this.isTimerRunning) return;
@@ -1245,9 +1508,7 @@ class KaoyanApp {
       gain.connect(audioCtx.destination);
       osc.start();
       osc.stop(audioCtx.currentTime + 0.6);
-    } catch (e) {
-      console.log("Audio not allowed", e);
-    }
+    } catch (e) {}
   }
 
   renderPomodoroLogs() {
@@ -1351,7 +1612,7 @@ class KaoyanApp {
     let totalSkillLvl = 0;
     Object.values(this.state.skills).forEach(s => totalSkillLvl += s.level);
 
-    let md = `# 🎯 考研复习日报 (${today})\n\n`;
+    let md = `# 🎯 考研工程复习日报 (${today})\n\n`;
     md += `> 用户身份：**${this.currentUser}**\n`;
     md += `> 目标院校：${this.state.targetSchool}\n`;
     md += `> 今日专注总时长：**${todayMinutes}** 分钟 (${(todayMinutes / 60).toFixed(1)} 小时)\n`;
@@ -1366,8 +1627,8 @@ class KaoyanApp {
       });
     }
 
-    md += `\n## 📝 错题积累统计\n`;
-    md += `- 当前错题本累计记录：**${this.state.mistakes.length}** 道重点难点题目\n\n`;
+    md += `\n## 🐞 错题 Issue 统计\n`;
+    md += `- 当前错题本累计记录：**${this.state.mistakes.length}** 个 Issues (包含待攻克、二刷检验与已闭环)\n\n`;
 
     md += `## 🌟 今日复习心得与明日规划\n`;
     md += `- 今日收获：\n- 明日重点任务：\n`;
@@ -1422,7 +1683,8 @@ class KaoyanApp {
     this.renderHeaderStats();
     this.renderSkillTree();
     this.renderMaterials();
-    this.renderAwesomeResources();
+    this.renderCodeWorkbench();
+    this.renderFlashcards();
     this.renderOutline();
     this.renderMistakes();
     this.renderPomodoroLogs();
