@@ -1,6 +1,5 @@
-// 考研备考与进度管理系统 (Kaoyan-Tracker) 核心应用逻辑
+// 考研备考与技能树管理系统 (Kaoyan-Tracker 2.0) 核心应用逻辑
 
-// 每日励志金句库
 const MOTIVATION_QUOTES = [
   { text: "星光不问赶路人，时光不负有心人。", author: "考研寄语" },
   { text: "研途虽苦，但终点繁花似锦。每一分努力都在为未来铺路。", author: "研友共勉" },
@@ -10,11 +9,8 @@ const MOTIVATION_QUOTES = [
   { text: "乾坤未定，你我皆是黑马；既然选择了远方，便只顾风雨兼程。", author: "研途金句" }
 ];
 
-// 默认考研初试日期（每年12月最后一个周六上午8:30，默认预设2026年考研初试）
 const DEFAULT_EXAM_DATE = "2026-12-26T08:30:00";
-
-// 数据存储键
-const STORAGE_KEY = "kaoyan_tracker_data_v1";
+const STORAGE_KEY = "kaoyan_tracker_data_v2";
 
 class KaoyanApp {
   constructor() {
@@ -25,9 +21,12 @@ class KaoyanApp {
     this.isTimerRunning = false;
     this.isBreakMode = false;
     this.activeTab = "dashboard";
+    this.activeSkillSubject = "math";
     this.activeOutlineSubject = "politics";
+    this.activeMaterialSubject = "math";
     this.mistakeFilterSubject = "all";
     this.mistakeSearchQuery = "";
+    this.currentStudyingPoint = null;
 
     this.initDOM();
     this.initEvents();
@@ -35,26 +34,27 @@ class KaoyanApp {
     this.render();
   }
 
-  // 加载本地状态
   loadState() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (!parsed.outline) parsed.outline = JSON.parse(JSON.stringify(DEFAULT_OUTLINE));
+        if (!parsed.skills) parsed.skills = this.initDefaultSkills();
         if (!parsed.mistakes) parsed.mistakes = [];
         if (!parsed.logs) parsed.logs = [];
         if (!parsed.examDate) parsed.examDate = DEFAULT_EXAM_DATE;
         if (!parsed.targetSchool) parsed.targetSchool = "目标院校 & 专业";
         return parsed;
       } catch (e) {
-        console.error("加载数据失败，使用初始数据", e);
+        console.error("加载数据失败", e);
       }
     }
     return {
       examDate: DEFAULT_EXAM_DATE,
       targetSchool: "清华/北大/浙大 计算机系 (点击可修改)",
       outline: JSON.parse(JSON.stringify(DEFAULT_OUTLINE)),
+      skills: this.initDefaultSkills(),
       mistakes: [
         {
           id: "m-1",
@@ -86,7 +86,16 @@ class KaoyanApp {
     };
   }
 
-  // 保存状态到 LocalStorage
+  initDefaultSkills() {
+    const skillsMap = {};
+    Object.values(SKILLS_DATA).forEach(subj => {
+      subj.skills.forEach(sk => {
+        skillsMap[sk.id] = { level: 1, exp: 30 };
+      });
+    });
+    return skillsMap;
+  }
+
   saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     this.renderHeaderStats();
@@ -94,11 +103,9 @@ class KaoyanApp {
 
   initDOM() {
     this.elements = {
-      // 导航
       tabs: document.querySelectorAll(".tab-btn"),
       tabContents: document.querySelectorAll(".tab-content"),
       
-      // 倒计时
       cdDays: document.getElementById("cd-days"),
       cdHours: document.getElementById("cd-hours"),
       cdMinutes: document.getElementById("cd-minutes"),
@@ -107,19 +114,27 @@ class KaoyanApp {
       quoteText: document.getElementById("quote-text"),
       quoteAuthor: document.getElementById("quote-author"),
       
-      // 顶部统计
       statTodayMinutes: document.getElementById("stat-today-minutes"),
+      statTotalSkillLevel: document.getElementById("stat-total-skill-level"),
       statTotalDonePoints: document.getElementById("stat-total-points"),
       statTotalMistakes: document.getElementById("stat-total-mistakes"),
       
-      // 大纲视图
+      // 技能树
+      skillSubjectTabs: document.getElementById("skill-subject-tabs"),
+      skillsNodesContainer: document.getElementById("skills-nodes-container"),
+
+      // 资料库
+      materialSubjectSelect: document.getElementById("material-subject-select"),
+      materialsContainer: document.getElementById("materials-container"),
+      
+      // 大纲
       outlineSubjectTabs: document.getElementById("outline-subject-tabs"),
       outlineChaptersContainer: document.getElementById("outline-chapters-container"),
       outlineSearchInput: document.getElementById("outline-search-input"),
       outlineProgressBar: document.getElementById("outline-progress-bar"),
       outlineProgressPercent: document.getElementById("outline-progress-percent"),
       
-      // 错题本
+      // 错题
       mistakesContainer: document.getElementById("mistakes-list"),
       mistakeSearchInput: document.getElementById("mistake-search-input"),
       mistakeSubjectFilter: document.getElementById("mistake-subject-filter"),
@@ -128,7 +143,7 @@ class KaoyanApp {
       formMistake: document.getElementById("form-mistake"),
       btnCancelMistake: document.getElementById("btn-cancel-mistake"),
       
-      // 番茄钟
+      // 番茄
       pomoDisplay: document.getElementById("pomo-display"),
       pomoSubjectSelect: document.getElementById("pomo-subject-select"),
       pomoTaskInput: document.getElementById("pomo-task-input"),
@@ -148,28 +163,46 @@ class KaoyanApp {
       modalReport: document.getElementById("modal-report"),
       reportContent: document.getElementById("report-content"),
       btnCloseReport: document.getElementById("btn-close-report"),
-      btnCopyReport: document.getElementById("btn-copy-report")
+      btnCopyReport: document.getElementById("btn-copy-report"),
+
+      // 考点研读弹窗
+      modalPointStudy: document.getElementById("modal-point-study"),
+      studyPointTitle: document.getElementById("study-point-title"),
+      studyPointBody: document.getElementById("study-point-body"),
+      btnClosePointStudy: document.getElementById("btn-close-point-study"),
+      btnCompletePointStudy: document.getElementById("btn-complete-point-study")
     };
   }
 
   initEvents() {
-    // 标签页切换
     this.elements.tabs.forEach(btn => {
       btn.addEventListener("click", () => {
-        const tab = btn.dataset.tab;
-        this.switchTab(tab);
+        this.switchTab(btn.dataset.tab);
       });
     });
 
-    // 目标学校点击编辑
     this.elements.targetSchoolText.addEventListener("click", () => {
-      const current = this.state.targetSchool;
-      const school = prompt("请输入您的考研目标院校与专业：", current);
+      const school = prompt("请输入您的考研目标院校与专业：", this.state.targetSchool);
       if (school && school.trim()) {
         this.state.targetSchool = school.trim();
         this.saveState();
         this.elements.targetSchoolText.innerText = this.state.targetSchool;
       }
+    });
+
+    // 技能树科目切换
+    this.elements.skillSubjectTabs.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-skill-subj]");
+      if (btn) {
+        this.activeSkillSubject = btn.dataset.skillSubj;
+        this.renderSkillTree();
+      }
+    });
+
+    // 资料库科目切换
+    this.elements.materialSubjectSelect.addEventListener("change", (e) => {
+      this.activeMaterialSubject = e.target.value;
+      this.renderMaterials();
     });
 
     // 大纲科目切换
@@ -181,7 +214,6 @@ class KaoyanApp {
       }
     });
 
-    // 大纲考点搜索
     this.elements.outlineSearchInput.addEventListener("input", (e) => {
       this.renderOutline(e.target.value.trim().toLowerCase());
     });
@@ -197,7 +229,6 @@ class KaoyanApp {
       this.renderMistakes();
     });
 
-    // 错题模态框
     this.elements.btnNewMistake.addEventListener("click", () => {
       this.elements.formMistake.reset();
       document.getElementById("mistake-id-input").value = "";
@@ -210,7 +241,6 @@ class KaoyanApp {
       this.elements.modalMistake.classList.remove("flex");
     });
 
-    // 错题表单提交
     this.elements.formMistake.addEventListener("submit", (e) => {
       e.preventDefault();
       const idInput = document.getElementById("mistake-id-input").value;
@@ -246,6 +276,7 @@ class KaoyanApp {
           date: new Date().toISOString().split("T")[0]
         };
         this.state.mistakes.unshift(newMistake);
+        this.addSkillExp(subject, 40); // 记录错题获得40点技能EXP
       }
 
       this.saveState();
@@ -254,12 +285,12 @@ class KaoyanApp {
       this.elements.modalMistake.classList.remove("flex");
     });
 
-    // 番茄钟控制
+    // 番茄钟
     this.elements.pomoBtnStart.addEventListener("click", () => this.startPomodoro());
     this.elements.pomoBtnPause.addEventListener("click", () => this.pausePomodoro());
     this.elements.pomoBtnReset.addEventListener("click", () => this.resetPomodoro());
 
-    // 导出/导入
+    // 导出备份
     this.elements.btnExportBackup.addEventListener("click", () => this.exportJSONBackup());
     this.elements.btnImportBackup.addEventListener("click", () => this.elements.fileImportInput.click());
     this.elements.fileImportInput.addEventListener("change", (e) => this.importJSONBackup(e));
@@ -273,9 +304,23 @@ class KaoyanApp {
         alert("复习日报 Markdown 已成功复制到剪贴板！");
       });
     });
+
+    // 考点研读弹窗
+    this.elements.btnClosePointStudy.addEventListener("click", () => {
+      this.elements.modalPointStudy.classList.add("hidden");
+      this.elements.modalPointStudy.classList.remove("flex");
+    });
+
+    this.elements.btnCompletePointStudy.addEventListener("click", () => {
+      if (this.currentStudyingPoint) {
+        this.addSkillExp(this.currentStudyingPoint.subjectId, 50);
+        this.elements.modalPointStudy.classList.add("hidden");
+        this.elements.modalPointStudy.classList.remove("flex");
+        alert("🎉 考点研读完成！已为对应技能增加 +50 EXP 经验值！");
+      }
+    });
   }
 
-  // 切换选项卡
   switchTab(tabId) {
     this.activeTab = tabId;
     this.elements.tabs.forEach(btn => {
@@ -294,13 +339,14 @@ class KaoyanApp {
       }
     });
 
+    if (tabId === "skills") this.renderSkillTree();
+    if (tabId === "materials") this.renderMaterials();
     if (tabId === "outline") this.renderOutline();
     if (tabId === "mistakes") this.renderMistakes();
     if (tabId === "pomodoro") this.renderPomodoroLogs();
     if (tabId === "analytics") this.renderAnalytics();
   }
 
-  // 倒计时刷新
   startCountdown() {
     const update = () => {
       const now = new Date().getTime();
@@ -335,12 +381,39 @@ class KaoyanApp {
     this.elements.targetSchoolText.innerText = this.state.targetSchool;
   }
 
-  // 渲染顶部数据概览
+  // 增加技能经验值并自动升级
+  addSkillExp(subjectId, expAmount) {
+    const tree = SKILLS_DATA[subjectId];
+    if (!tree) return;
+    
+    // 随机或者为第一个技能增加经验
+    const skill = tree.skills[0];
+    if (!this.state.skills[skill.id]) {
+      this.state.skills[skill.id] = { level: 1, exp: 0 };
+    }
+    
+    const cur = this.state.skills[skill.id];
+    cur.exp += expAmount;
+    const required = skill.expPerLevel * cur.level;
+    if (cur.exp >= required && cur.level < skill.maxLevel) {
+      cur.level++;
+      cur.exp -= required;
+      alert(`🌟 恭喜！技能【${skill.name}】成功晋升至 Lv.${cur.level}！`);
+    }
+    this.saveState();
+  }
+
   renderHeaderStats() {
     const today = new Date().toISOString().split("T")[0];
     const todayLogs = this.state.logs.filter(l => l.date === today);
     const todayMinutes = todayLogs.reduce((acc, cur) => acc + cur.minutes, 0);
     this.elements.statTodayMinutes.innerText = todayMinutes;
+
+    let totalLevel = 0;
+    Object.values(this.state.skills).forEach(s => {
+      totalLevel += s.level;
+    });
+    this.elements.statTotalSkillLevel.innerText = `Lv. ${totalLevel}`;
 
     let totalPoints = 0;
     let donePoints = 0;
@@ -396,6 +469,97 @@ class KaoyanApp {
     this.switchTab("outline");
   }
 
+  // 渲染技能树
+  renderSkillTree() {
+    let tabsHtml = "";
+    Object.values(SKILLS_DATA).forEach(tree => {
+      const active = tree.id === this.activeSkillSubject ? "bg-indigo-600/30 border-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-gray-800/40 border-gray-700 text-gray-400";
+      tabsHtml += `
+        <button data-skill-subj="${tree.id}" class="px-4 py-2 rounded-xl border text-xs font-semibold transition-all flex items-center gap-2 ${active}">
+          <span>${tree.icon}</span>
+          <span>${tree.badge}</span>
+        </button>
+      `;
+    });
+    this.elements.skillSubjectTabs.innerHTML = tabsHtml;
+
+    const currentTree = SKILLS_DATA[this.activeSkillSubject];
+    if (!currentTree) return;
+
+    let nodesHtml = "";
+    currentTree.skills.forEach(sk => {
+      const userSkill = this.state.skills[sk.id] || { level: 1, exp: 0 };
+      const expNeeded = sk.expPerLevel * userSkill.level;
+      const progressPercent = Math.min(100, Math.round((userSkill.exp / expNeeded) * 100));
+
+      nodesHtml += `
+        <div class="skill-node p-6 flex flex-col justify-between relative overflow-hidden">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xl">
+                ${sk.icon}
+              </div>
+              <span class="skill-level-badge text-black font-extrabold text-xs px-2.5 py-0.5 rounded-full font-mono">
+                Lv.${userSkill.level} / 5
+              </span>
+            </div>
+            
+            <h4 class="font-bold text-white text-base mb-1">${sk.name}</h4>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400 font-mono mb-2 inline-block">${sk.category}</span>
+            <p class="text-xs text-gray-300 leading-relaxed mb-4">${sk.desc}</p>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-[11px] text-gray-400 mb-1 font-mono">
+              <span>EXP: ${userSkill.exp} / ${expNeeded}</span>
+              <span class="text-indigo-400 font-bold">${progressPercent}%</span>
+            </div>
+            <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden mb-4">
+              <div class="bg-gradient-to-r from-indigo-500 to-cyan-400 h-2 rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+            </div>
+
+            <div class="pt-3 border-t border-white/5 flex items-center justify-between">
+              <span class="text-[10px] text-emerald-400">🎁 ${sk.rewards[0] || '解锁高阶技能'}</span>
+              <button onclick="app.trainSkill('${currentTree.id}', '${sk.id}')" class="px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-xs text-indigo-200 hover:text-white border border-indigo-500/40 transition-all font-semibold">
+                +30 EXP 淬炼
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    this.elements.skillsNodesContainer.innerHTML = nodesHtml;
+  }
+
+  trainSkill(subjectId, skillId) {
+    this.addSkillExp(subjectId, 30);
+    this.renderSkillTree();
+  }
+
+  // 渲染内置知识资料库
+  renderMaterials() {
+    const list = STUDY_MATERIALS[this.activeMaterialSubject] || [];
+    let html = "";
+    list.forEach(item => {
+      const renderedMd = marked.parse(item.content);
+      html += `
+        <div class="glass-panel p-6">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+            <h4 class="font-bold text-white text-base">${item.title}</h4>
+            <div class="flex gap-2">
+              ${(item.tags || []).map(t => `<span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 font-mono border border-indigo-500/20">#${t}</span>`).join("")}
+            </div>
+          </div>
+          <div class="markdown-body text-xs text-gray-300 leading-relaxed">
+            ${renderedMd}
+          </div>
+        </div>
+      `;
+    });
+    this.elements.materialsContainer.innerHTML = html;
+  }
+
   // 渲染考点大纲
   renderOutline(searchKeyword = "") {
     let tabHtml = "";
@@ -435,8 +599,9 @@ class KaoyanApp {
             <div class="flex-1 text-sm ${pt.done ? "line-through text-gray-500" : "text-gray-200"}">
               ${pt.title}
             </div>
-            <div class="flex items-center gap-1">
-              <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-mono">第${pt.round || 1}轮</span>
+            <div class="flex items-center gap-2">
+              <button onclick="app.openPointStudy('${subject.id}', '${pt.title}')" class="text-xs text-indigo-400 hover:text-indigo-300 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20" title="打开沉浸式考点深度研读">📖 精讲</button>
+              <span class="text-xs px-2 py-0.5 rounded bg-white/5 text-gray-400 font-mono">第${pt.round || 1}轮</span>
               <button onclick="app.advanceRound('${subject.id}', ${chIdx}, ${ptIdx})" class="text-xs text-gray-400 hover:text-indigo-400 p-1" title="增加复习轮次">+1轮</button>
             </div>
           </div>
@@ -466,9 +631,24 @@ class KaoyanApp {
     this.elements.outlineProgressPercent.innerText = `${percent}% (${subDone}/${subTotal})`;
   }
 
+  // 打开考点精讲弹窗
+  openPointStudy(subjectId, pointTitle) {
+    this.currentStudyingPoint = { subjectId, pointTitle };
+    this.elements.studyPointTitle.innerText = pointTitle;
+    
+    let content = `### 🎯 核心概念与考研命题规律\n该考点属于 **${subjectId}** 的核心高频考察范畴，在历年真题中常以客观选择题与综合解答大题的形式出现。\n\n### 💡 解题技巧与避坑指南\n1. **审清题意**：明确题目所给的边界条件与约束，防止漏掉临界状态。\n2. **套路应用**：熟记本考点的标准推导公式与答题模板步骤。\n3. **多维复盘**：结合历年真题与错题本反思易错混淆点。\n\n### 🌟 考研学长学姐备考寄语\n“把每一次的弄懂当做上岸的台阶，稳扎稳打，一战成硕！”`;
+    
+    this.elements.studyPointBody.innerHTML = marked.parse(content);
+    this.elements.modalPointStudy.classList.remove("hidden");
+    this.elements.modalPointStudy.classList.add("flex");
+  }
+
   togglePoint(subjectId, chIdx, ptIdx) {
     const pt = this.state.outline[subjectId].chapters[chIdx].points[ptIdx];
     pt.done = !pt.done;
+    if (pt.done) {
+      this.addSkillExp(subjectId, 20); // 掌握考点奖励 20 EXP
+    }
     this.saveState();
     this.renderOutline(this.elements.outlineSearchInput.value.trim().toLowerCase());
   }
@@ -612,10 +792,12 @@ class KaoyanApp {
           const today = new Date().toISOString().split("T")[0];
 
           this.state.logs.unshift({ date: today, minutes, subject, note });
+          this.addSkillExp(subject, 50); // 番茄钟完成获得 50 EXP
+
           this.saveState();
           this.renderPomodoroLogs();
 
-          alert(`🎉 恭喜完成一个番茄钟（${minutes}分钟）！休息5分钟吧~`);
+          alert(`🎉 恭喜完成一个番茄钟（${minutes}分钟）！已获得 +50 技能 EXP！休息5分钟吧~`);
           this.isBreakMode = true;
           this.timerTotal = 5 * 60;
           this.timerSeconds = 5 * 60;
@@ -709,7 +891,6 @@ class KaoyanApp {
     this.elements.pomoLogsList.innerHTML = html;
   }
 
-  // 渲染统计数据与打卡热力图
   renderAnalytics() {
     this.renderHeatmap();
     this.renderSubjectDistribution();
@@ -775,52 +956,39 @@ class KaoyanApp {
     container.innerHTML = html;
   }
 
-  // 生成并打开复习日报模态框
   openReportModal() {
     const today = new Date().toISOString().split("T")[0];
     const todayLogs = this.state.logs.filter(l => l.date === today);
     const todayMinutes = todayLogs.reduce((sum, item) => sum + item.minutes, 0);
 
-    let md = `# 🎯 考研复习日报 (${today})
+    let totalSkillLvl = 0;
+    Object.values(this.state.skills).forEach(s => totalSkillLvl += s.level);
 
-`;
-    md += `> 目标院校：${this.state.targetSchool}
-`;
-    md += `> 今日专注总时长：**${todayMinutes}** 分钟 (${(todayMinutes / 60).toFixed(1)} 小时)
+    let md = `# 🎯 考研复习日报 (${today})\n\n`;
+    md += `> 目标院校：${this.state.targetSchool}\n`;
+    md += `> 今日专注总时长：**${todayMinutes}** 分钟 (${(todayMinutes / 60).toFixed(1)} 小时)\n`;
+    md += `> 考研技能树总等级：**Lv.${totalSkillLvl}**\n\n`;
 
-`;
-
-    md += `## ⏱️ 今日专注记录
-`;
+    md += `## ⏱️ 今日专注记录\n`;
     if (todayLogs.length === 0) {
-      md += `- 今日暂无打卡记录
-`;
+      md += `- 今日暂无打卡记录\n`;
     } else {
       todayLogs.forEach(l => {
-        md += `- [${l.subject}] **${l.minutes}分钟**：${l.note}
-`;
+        md += `- [${l.subject}] **${l.minutes}分钟**：${l.note}\n`;
       });
     }
 
-    md += `
-## 📝 错题积累统计
-`;
-    md += `- 当前错题本累计记录：**${this.state.mistakes.length}** 道重点难点题目
+    md += `\n## 📝 错题积累统计\n`;
+    md += `- 当前错题本累计记录：**${this.state.mistakes.length}** 道重点难点题目\n\n`;
 
-`;
-
-    md += `## 🌟 今日复习心得与明日规划
-`;
-    md += `- 今日收获：
-- 明日重点任务：
-`;
+    md += `## 🌟 今日复习心得与明日规划\n`;
+    md += `- 今日收获：\n- 明日重点任务：\n`;
 
     this.elements.reportContent.value = md;
     this.elements.modalReport.classList.remove("hidden");
     this.elements.modalReport.classList.add("flex");
   }
 
-  // 备份与还原 JSON
   exportJSONBackup() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state, null, 2));
     const downloadAnchor = document.createElement("a");
@@ -856,6 +1024,8 @@ class KaoyanApp {
 
   render() {
     this.renderHeaderStats();
+    this.renderSkillTree();
+    this.renderMaterials();
     this.renderOutline();
     this.renderMistakes();
     this.renderPomodoroLogs();
@@ -863,7 +1033,6 @@ class KaoyanApp {
   }
 }
 
-// 全局应用实例
 let app;
 window.addEventListener("DOMContentLoaded", () => {
   app = new KaoyanApp();
