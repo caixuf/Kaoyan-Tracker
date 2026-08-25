@@ -1,4 +1,4 @@
-// 考研备考、技能树与开源生态系统 (Kaoyan-Tracker 2.5) 核心逻辑
+// 考研备考、技能树与 GitHub 仓库云存储系统 (Kaoyan-Tracker 3.0) 核心逻辑
 
 const MOTIVATION_QUOTES = [
   { text: "星光不问赶路人，时光不负有心人。", author: "考研寄语" },
@@ -10,7 +10,7 @@ const MOTIVATION_QUOTES = [
 ];
 
 const DEFAULT_EXAM_DATE = "2026-12-26T08:30:00";
-const STORAGE_KEY = "kaoyan_tracker_data_v2";
+const STORAGE_KEY = "kaoyan_tracker_data_v3";
 
 class KaoyanApp {
   constructor() {
@@ -31,6 +31,7 @@ class KaoyanApp {
     this.initDOM();
     this.initEvents();
     this.startCountdown();
+    this.initGitHubSync();
     this.render();
   }
 
@@ -65,7 +66,7 @@ class KaoyanApp {
           solution: "分母先等价无穷小代换 x * (1/2 * x^2) = 1/2 * x^3；分子使用泰勒展开：x - (x - x^3/6 + o(x^3)) = x^3/6。答案为 (1/6) / (1/2) = 1/3。",
           tags: ["泰勒展开", "极限计算", "高数重点"],
           mastery: 2,
-          date: new Date().toISOString().split("T")[0]
+          date: "2026-08-25"
         },
         {
           id: "m-2",
@@ -76,12 +77,12 @@ class KaoyanApp {
           solution: "当待排序序列已经基本有序或完全逆序时，每次选取的基准只能划分出长度为 0 和 n-1 的子表，递归树高度变为 n，时间复杂度退化为 O(n^2)。优化方法：三数取中法、随机选取基准法、结合插入排序。",
           tags: ["数据结构", "排序算法", "复杂度分析"],
           mastery: 3,
-          date: new Date().toISOString().split("T")[0]
+          date: "2026-08-25"
         }
       ],
       logs: [
-        { date: new Date().toISOString().split("T")[0], minutes: 120, subject: "math", note: "完成高数第一章极限题型训练" },
-        { date: new Date().toISOString().split("T")[0], minutes: 45, subject: "english", note: "背诵高频词汇与长难句拆解" }
+        { date: "2026-08-25", minutes: 120, subject: "math", note: "完成高数第一章极限题型训练" },
+        { date: "2026-08-25", minutes: 45, subject: "english", note: "背诵高频词汇与长难句拆解" }
       ]
     };
   }
@@ -99,6 +100,7 @@ class KaoyanApp {
   saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     this.renderHeaderStats();
+    this.triggerAutoSync();
   }
 
   initDOM() {
@@ -119,25 +121,20 @@ class KaoyanApp {
       statTotalDonePoints: document.getElementById("stat-total-points"),
       statTotalMistakes: document.getElementById("stat-total-mistakes"),
       
-      // 技能树
       skillSubjectTabs: document.getElementById("skill-subject-tabs"),
       skillsNodesContainer: document.getElementById("skills-nodes-container"),
 
-      // 资料库
       materialSubjectSelect: document.getElementById("material-subject-select"),
       materialsContainer: document.getElementById("materials-container"),
       
-      // 开源宝库
       awesomeContainer: document.getElementById("awesome-resources-container"),
 
-      // 大纲
       outlineSubjectTabs: document.getElementById("outline-subject-tabs"),
       outlineChaptersContainer: document.getElementById("outline-chapters-container"),
       outlineSearchInput: document.getElementById("outline-search-input"),
       outlineProgressBar: document.getElementById("outline-progress-bar"),
       outlineProgressPercent: document.getElementById("outline-progress-percent"),
       
-      // 错题
       mistakesContainer: document.getElementById("mistakes-list"),
       mistakeSearchInput: document.getElementById("mistake-search-input"),
       mistakeSubjectFilter: document.getElementById("mistake-subject-filter"),
@@ -146,7 +143,6 @@ class KaoyanApp {
       formMistake: document.getElementById("form-mistake"),
       btnCancelMistake: document.getElementById("btn-cancel-mistake"),
       
-      // 番茄
       pomoDisplay: document.getElementById("pomo-display"),
       pomoSubjectSelect: document.getElementById("pomo-subject-select"),
       pomoTaskInput: document.getElementById("pomo-task-input"),
@@ -157,7 +153,6 @@ class KaoyanApp {
       pomoRingCircle: document.getElementById("pomo-ring-circle"),
       pomoLogsList: document.getElementById("pomo-logs-list"),
       
-      // 统计与导出
       heatmapContainer: document.getElementById("heatmap-grid"),
       btnExportReport: document.getElementById("btn-export-report"),
       btnExportBackup: document.getElementById("btn-export-backup"),
@@ -168,12 +163,23 @@ class KaoyanApp {
       btnCloseReport: document.getElementById("btn-close-report"),
       btnCopyReport: document.getElementById("btn-copy-report"),
 
-      // 考点研读弹窗
       modalPointStudy: document.getElementById("modal-point-study"),
       studyPointTitle: document.getElementById("study-point-title"),
       studyPointBody: document.getElementById("study-point-body"),
       btnClosePointStudy: document.getElementById("btn-close-point-study"),
-      btnCompletePointStudy: document.getElementById("btn-complete-point-study")
+      btnCompletePointStudy: document.getElementById("btn-complete-point-study"),
+
+      btnOpenGithubSync: document.getElementById("btn-open-github-sync"),
+      modalGithubSync: document.getElementById("modal-github-sync"),
+      btnCloseGithubSync: document.getElementById("btn-close-github-sync"),
+      ghRepoInput: document.getElementById("gh-repo-input"),
+      ghTokenInput: document.getElementById("gh-token-input"),
+      ghAutoSyncInput: document.getElementById("gh-autosync-input"),
+      btnPushToGithub: document.getElementById("btn-push-to-github"),
+      btnPullFromGithub: document.getElementById("btn-pull-from-github"),
+      ghSyncStatusText: document.getElementById("gh-sync-status-text"),
+      ghLastSyncTime: document.getElementById("gh-last-sync-time"),
+      syncIndicatorDot: document.getElementById("sync-indicator-dot")
     };
   }
 
@@ -193,7 +199,6 @@ class KaoyanApp {
       }
     });
 
-    // 技能树科目切换
     this.elements.skillSubjectTabs.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-skill-subj]");
       if (btn) {
@@ -202,13 +207,11 @@ class KaoyanApp {
       }
     });
 
-    // 资料库科目切换
     this.elements.materialSubjectSelect.addEventListener("change", (e) => {
       this.activeMaterialSubject = e.target.value;
       this.renderMaterials();
     });
 
-    // 大纲科目切换
     this.elements.outlineSubjectTabs.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-subject]");
       if (btn) {
@@ -221,7 +224,6 @@ class KaoyanApp {
       this.renderOutline(e.target.value.trim().toLowerCase());
     });
 
-    // 错题筛选
     this.elements.mistakeSubjectFilter.addEventListener("change", (e) => {
       this.mistakeFilterSubject = e.target.value;
       this.renderMistakes();
@@ -288,12 +290,10 @@ class KaoyanApp {
       this.elements.modalMistake.classList.remove("flex");
     });
 
-    // 番茄钟
     this.elements.pomoBtnStart.addEventListener("click", () => this.startPomodoro());
     this.elements.pomoBtnPause.addEventListener("click", () => this.pausePomodoro());
     this.elements.pomoBtnReset.addEventListener("click", () => this.resetPomodoro());
 
-    // 导出备份
     this.elements.btnExportBackup.addEventListener("click", () => this.exportJSONBackup());
     this.elements.btnImportBackup.addEventListener("click", () => this.elements.fileImportInput.click());
     this.elements.fileImportInput.addEventListener("change", (e) => this.importJSONBackup(e));
@@ -308,7 +308,6 @@ class KaoyanApp {
       });
     });
 
-    // 考点研读弹窗
     this.elements.btnClosePointStudy.addEventListener("click", () => {
       this.elements.modalPointStudy.classList.add("hidden");
       this.elements.modalPointStudy.classList.remove("flex");
@@ -324,6 +323,201 @@ class KaoyanApp {
     });
   }
 
+  // =================== GitHub 仓库云存储同步核心 (Git-as-Database) ===================
+
+  initGitHubSync() {
+    this.ghConfig = {
+      repo: localStorage.getItem("kaoyan_gh_repo") || "caixuf/Kaoyan-Tracker",
+      token: localStorage.getItem("kaoyan_gh_token") || "",
+      autoSync: localStorage.getItem("kaoyan_gh_autosync") === "true",
+      fileSha: null
+    };
+
+    this.elements.ghRepoInput.value = this.ghConfig.repo;
+    this.elements.ghTokenInput.value = this.ghConfig.token;
+    this.elements.ghAutoSyncInput.checked = this.ghConfig.autoSync;
+    this.updateSyncIndicator();
+
+    this.elements.btnOpenGithubSync.addEventListener("click", () => {
+      this.elements.modalGithubSync.classList.remove("hidden");
+      this.elements.modalGithubSync.classList.add("flex");
+    });
+
+    this.elements.btnCloseGithubSync.addEventListener("click", () => {
+      this.saveGitHubConfig();
+      this.elements.modalGithubSync.classList.add("hidden");
+      this.elements.modalGithubSync.classList.remove("flex");
+    });
+
+    this.elements.btnPushToGithub.addEventListener("click", () => this.pushToGitHub(true));
+    this.elements.btnPullFromGithub.addEventListener("click", () => this.pullFromGitHub(true));
+
+    if (this.ghConfig.token) {
+      this.pullFromGitHub(false);
+    } else {
+      this.fetchPublicRepoData();
+    }
+  }
+
+  saveGitHubConfig() {
+    this.ghConfig.repo = this.elements.ghRepoInput.value.trim() || "caixuf/Kaoyan-Tracker";
+    this.ghConfig.token = this.elements.ghTokenInput.value.trim();
+    this.ghConfig.autoSync = this.elements.ghAutoSyncInput.checked;
+
+    localStorage.setItem("kaoyan_gh_repo", this.ghConfig.repo);
+    localStorage.setItem("kaoyan_gh_token", this.ghConfig.token);
+    localStorage.setItem("kaoyan_gh_autosync", this.ghConfig.autoSync ? "true" : "false");
+    this.updateSyncIndicator();
+  }
+
+  updateSyncIndicator() {
+    if (!this.elements.syncIndicatorDot) return;
+    if (this.ghConfig.token) {
+      this.elements.syncIndicatorDot.className = "w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50";
+      this.elements.syncIndicatorDot.title = "已连接 GitHub 仓库云存储";
+    } else {
+      this.elements.syncIndicatorDot.className = "w-2 h-2 rounded-full bg-amber-400";
+      this.elements.syncIndicatorDot.title = "未配置 GitHub Token (本地模式)";
+    }
+  }
+
+  async fetchPublicRepoData() {
+    try {
+      const res = await fetch("https://raw.githubusercontent.com/" + this.ghConfig.repo + "/main/data/userData.json?t=" + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        if (data.mistakes && data.skills) {
+          this.state.targetSchool = data.targetSchool || this.state.targetSchool;
+          this.state.skills = data.skills || this.state.skills;
+          this.state.mistakes = data.mistakes || this.state.mistakes;
+          this.state.logs = data.logs || this.state.logs;
+          this.render();
+          console.log("从 GitHub 仓库加载最新数据成功");
+        }
+      }
+    } catch (e) {
+      console.log("免认证拉取数据跳过", e);
+    }
+  }
+
+  async pullFromGitHub(showToast = true) {
+    this.saveGitHubConfig();
+    if (!this.ghConfig.token) {
+      if (showToast) alert("请先填写 GitHub Personal Access Token！");
+      return;
+    }
+
+    try {
+      this.elements.ghSyncStatusText.innerText = "正在从仓库拉取...";
+      const res = await fetch("https://api.github.com/repos/" + this.ghConfig.repo + "/contents/data/userData.json", {
+        headers: {
+          "Authorization": "Bearer " + this.ghConfig.token,
+          "Accept": "application/vnd.github.v3+json"
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error("HTTP " + res.status + ": " + res.statusText);
+      }
+
+      const fileData = await res.json();
+      this.ghConfig.fileSha = fileData.sha;
+      const contentStr = decodeURIComponent(escape(atob(fileData.content.replace(/\n/g, ''))));
+      const parsed = JSON.parse(contentStr);
+
+      if (parsed.mistakes || parsed.skills) {
+        this.state.targetSchool = parsed.targetSchool || this.state.targetSchool;
+        this.state.skills = parsed.skills || this.state.skills;
+        this.state.mistakes = parsed.mistakes || this.state.mistakes;
+        this.state.logs = parsed.logs || this.state.logs;
+        this.saveState();
+        this.render();
+
+        const timeStr = new Date().toLocaleTimeString();
+        this.elements.ghSyncStatusText.innerText = "拉取成功！已是最新";
+        this.elements.ghLastSyncTime.innerText = timeStr;
+        if (showToast) alert("🎉 成功从 GitHub 仓库同步最新考研数据！");
+      }
+    } catch (err) {
+      this.elements.ghSyncStatusText.innerText = "拉取失败：" + err.message;
+      if (showToast) alert("从 GitHub 拉取失败：" + err.message);
+    }
+  }
+
+  async pushToGitHub(showToast = true) {
+    this.saveGitHubConfig();
+    if (!this.ghConfig.token) {
+      if (showToast) alert("请先填写 GitHub Personal Access Token！");
+      return;
+    }
+
+    try {
+      this.elements.ghSyncStatusText.innerText = "正在提交到仓库...";
+
+      if (!this.ghConfig.fileSha) {
+        const getRes = await fetch("https://api.github.com/repos/" + this.ghConfig.repo + "/contents/data/userData.json", {
+          headers: {
+            "Authorization": "Bearer " + this.ghConfig.token,
+            "Accept": "application/vnd.github.v3+json"
+          }
+        });
+        if (getRes.ok) {
+          const fileData = await getRes.json();
+          this.ghConfig.fileSha = fileData.sha;
+        }
+      }
+
+      const payloadData = {
+        examDate: this.state.examDate,
+        targetSchool: this.state.targetSchool,
+        lastSyncTime: new Date().toISOString(),
+        skills: this.state.skills,
+        mistakes: this.state.mistakes,
+        logs: this.state.logs
+      };
+
+      const jsonString = JSON.stringify(payloadData, null, 2);
+      const base64Content = btoa(unescape(encodeURIComponent(jsonString)));
+
+      const body = {
+        message: "data(sync): update kaoyan study progress [" + new Date().toLocaleDateString() + "]",
+        content: base64Content,
+        sha: this.ghConfig.fileSha || undefined
+      };
+
+      const putRes = await fetch("https://api.github.com/repos/" + this.ghConfig.repo + "/contents/data/userData.json", {
+        method: "PUT",
+        headers: {
+          "Authorization": "Bearer " + this.ghConfig.token,
+          "Content-Type": "application/json",
+          "Accept": "application/vnd.github.v3+json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!putRes.ok) {
+        const errJson = await putRes.json().catch(() => ({}));
+        throw new Error(errJson.message || "HTTP " + putRes.status);
+      }
+
+      const resData = await putRes.json();
+      this.ghConfig.fileSha = resData.content.sha;
+      const timeStr = new Date().toLocaleTimeString();
+      this.elements.ghSyncStatusText.innerText = "提交成功 (已持久化到仓库)";
+      this.elements.ghLastSyncTime.innerText = timeStr;
+      if (showToast) alert("🎉 考研数据已作为新 Commit 成功持久化保存到 GitHub 仓库！");
+    } catch (err) {
+      this.elements.ghSyncStatusText.innerText = "提交失败：" + err.message;
+      if (showToast) alert("提交到 GitHub 仓库失败：" + err.message);
+    }
+  }
+
+  triggerAutoSync() {
+    if (this.ghConfig && this.ghConfig.autoSync && this.ghConfig.token) {
+      this.pushToGitHub(false);
+    }
+  }
+
   switchTab(tabId) {
     this.activeTab = tabId;
     this.elements.tabs.forEach(btn => {
@@ -335,7 +529,7 @@ class KaoyanApp {
     });
 
     this.elements.tabContents.forEach(section => {
-      if (section.id === `tab-${tabId}`) {
+      if (section.id === "tab-" + tabId) {
         section.classList.remove("hidden");
       } else {
         section.classList.add("hidden");
@@ -380,8 +574,8 @@ class KaoyanApp {
     setInterval(update, 1000);
 
     const quote = MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)];
-    this.elements.quoteText.innerText = `“${quote.text}”`;
-    this.elements.quoteAuthor.innerText = `—— ${quote.author}`;
+    this.elements.quoteText.innerText = "“" + quote.text + "”";
+    this.elements.quoteAuthor.innerText = "—— " + quote.author;
     this.elements.targetSchoolText.innerText = this.state.targetSchool;
   }
 
@@ -400,7 +594,7 @@ class KaoyanApp {
     if (cur.exp >= required && cur.level < skill.maxLevel) {
       cur.level++;
       cur.exp -= required;
-      alert(`🌟 恭喜！技能【${skill.name}】成功晋升至 Lv.${cur.level}！`);
+      alert("🌟 恭喜！技能【" + skill.name + "】成功晋升至 Lv." + cur.level + "！");
     }
     this.saveState();
   }
@@ -415,7 +609,7 @@ class KaoyanApp {
     Object.values(this.state.skills).forEach(s => {
       totalLevel += s.level;
     });
-    this.elements.statTotalSkillLevel.innerText = `Lv. ${totalLevel}`;
+    this.elements.statTotalSkillLevel.innerText = "Lv. " + totalLevel;
 
     let totalPoints = 0;
     let donePoints = 0;
@@ -427,7 +621,7 @@ class KaoyanApp {
         });
       });
     });
-    this.elements.statTotalDonePoints.innerText = `${donePoints}/${totalPoints}`;
+    this.elements.statTotalDonePoints.innerText = donePoints + "/" + totalPoints;
     this.elements.statTotalMistakes.innerText = this.state.mistakes.length;
 
     this.renderDashboardProgress();
@@ -560,7 +754,6 @@ class KaoyanApp {
     this.elements.materialsContainer.innerHTML = html;
   }
 
-  // 渲染开源宝藏库 (Awesome Kaoyan Hub)
   renderAwesomeResources() {
     const container = this.elements.awesomeContainer;
     if (!container) return;
@@ -845,7 +1038,7 @@ class KaoyanApp {
           this.saveState();
           this.renderPomodoroLogs();
 
-          alert(`🎉 恭喜完成一个番茄钟（${minutes}分钟）！已获得 +50 技能 EXP！休息5分钟吧~`);
+          alert("🎉 恭喜完成一个番茄钟（" + minutes + "分钟）！已获得 +50 技能 EXP！休息5分钟吧~");
           this.isBreakMode = true;
           this.timerTotal = 5 * 60;
           this.timerSeconds = 5 * 60;
@@ -884,7 +1077,7 @@ class KaoyanApp {
   updateTimerDisplay() {
     const mins = Math.floor(this.timerSeconds / 60);
     const secs = this.timerSeconds % 60;
-    const str = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    const str = String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
     this.elements.pomoDisplay.innerText = str;
 
     const circumference = 2 * Math.PI * 90;
