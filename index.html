@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kaoyan Tracker - 考研备考与进度管理系统</title>
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- 顶部导航栏 -->
+  <header class="sticky top-0 z-40 glass-nav">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+          <span class="text-xl">🎓</span>
+        </div>
+        <div>
+          <h1 class="text-base font-bold bg-gradient-to-r from-white via-gray-200 to-indigo-300 bg-clip-text text-transparent">
+            Kaoyan Tracker
+          </h1>
+          <p class="text-xs text-gray-400 flex items-center gap-1 cursor-pointer group" id="target-school-display" title="点击可修改目标院校">
+            <span>目标院校 & 专业</span>
+            <span class="opacity-0 group-hover:opacity-100 text-indigo-400 text-[10px]">✎ 修改</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- 选项卡导航 -->
+      <nav class="flex items-center gap-1 bg-gray-900/60 p-1 rounded-xl border border-white/5">
+        <button class="tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all" data-tab="dashboard">
+          <span>📊</span> 看板
+        </button>
+        <button class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400" data-tab="outline">
+          <span>📚</span> 考点大纲
+        </button>
+        <button class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400" data-tab="mistakes">
+          <span>📝</span> 错题本
+        </button>
+        <button class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400" data-tab="pomodoro">
+          <span>⏱️</span> 番茄专注
+        </button>
+        <button class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-gray-400" data-tab="analytics">
+          <span>📈</span> 统计日报
+        </button>
+      </nav>
+
+      <!-- 快速备份与 GitHub 链接 -->
+      <div class="hidden md:flex items-center gap-2">
+        <button id="btn-export-backup" class="px-3 py-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 border border-white/5 text-xs text-gray-300 transition-all flex items-center gap-1" title="导出 JSON 备份文件">
+          <span>💾 备份</span>
+        </button>
+        <button id="btn-import-backup" class="px-3 py-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 border border-white/5 text-xs text-gray-300 transition-all flex items-center gap-1" title="导入 JSON 还原">
+          <span>📂 还原</span>
+        </button>
+        <input type="file" id="file-import-input" accept=".json" class="hidden">
+      </div>
+    </div>
+  </header>
+
+  <!-- 主体内容区域 -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- 1. 考研看板 (Dashboard) -->
+    <section id="tab-dashboard" class="tab-content space-y-6">
+      
+      <!-- 倒计时与金句横幅 -->
+      <div class="glass-panel p-6 sm:p-8 relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div class="space-y-2 text-center lg:text-left">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              </span>
+              2027/2026 考研初试倒计时
+            </div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-white" id="quote-text">“星光不问赶路人，时光不负有心人。”</h2>
+            <p class="text-xs text-gray-400 font-medium" id="quote-author">—— 考研寄语</p>
+          </div>
+
+          <!-- 倒计时卡片组 -->
+          <div class="flex items-center gap-2 sm:gap-3">
+            <div class="countdown-box px-4 py-3 rounded-xl text-center min-w-[70px]">
+              <span class="block text-2xl sm:text-3xl font-extrabold text-indigo-400 font-mono" id="cd-days">00</span>
+              <span class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">天</span>
+            </div>
+            <span class="text-xl text-gray-500 font-bold">:</span>
+            <div class="countdown-box px-4 py-3 rounded-xl text-center min-w-[70px]">
+              <span class="block text-2xl sm:text-3xl font-extrabold text-white font-mono" id="cd-hours">00</span>
+              <span class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">时</span>
+            </div>
+            <span class="text-xl text-gray-500 font-bold">:</span>
+            <div class="countdown-box px-4 py-3 rounded-xl text-center min-w-[70px]">
+              <span class="block text-2xl sm:text-3xl font-extrabold text-white font-mono" id="cd-minutes">00</span>
+              <span class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">分</span>
+            </div>
+            <span class="text-xl text-gray-500 font-bold">:</span>
+            <div class="countdown-box px-4 py-3 rounded-xl text-center min-w-[70px]">
+              <span class="block text-2xl sm:text-3xl font-extrabold text-cyan-400 font-mono" id="cd-seconds">00</span>
+              <span class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">秒</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 数据指标卡片 -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="glass-panel p-5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-400 mb-1">今日专注时长</p>
+            <h3 class="text-2xl font-extrabold text-white font-mono"><span id="stat-today-minutes">0</span> <span class="text-sm font-normal text-gray-400">分钟</span></h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xl">
+            ⏱️
+          </div>
+        </div>
+
+        <div class="glass-panel p-5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-400 mb-1">已掌握考点总数</p>
+            <h3 class="text-2xl font-extrabold text-white font-mono" id="stat-total-points">0/0</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl">
+            🎯
+          </div>
+        </div>
+
+        <div class="glass-panel p-5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-400 mb-1">错题积累本</p>
+            <h3 class="text-2xl font-extrabold text-white font-mono"><span id="stat-total-mistakes">0</span> <span class="text-sm font-normal text-gray-400">题</span></h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-xl">
+            📝
+          </div>
+        </div>
+      </div>
+
+      <!-- 四科复习进度概览 -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span>📚</span> 各科目备考进度全景
+          </h3>
+          <span class="text-xs text-gray-400">点击卡片可快速跳转到对应大纲</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="dashboard-subjects-overview">
+          <!-- 动态渲染 -->
+        </div>
+      </div>
+
+      <!-- 快捷入口卡片 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="glass-panel p-6 flex items-center justify-between">
+          <div>
+            <h4 class="font-bold text-white text-base mb-1">⏱️ 开启一个番茄钟</h4>
+            <p class="text-xs text-gray-400">沉浸专注25分钟，高效吸收考点</p>
+          </div>
+          <button onclick="app.switchTab('pomodoro')" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold text-white">
+            立即开始
+          </button>
+        </div>
+
+        <div class="glass-panel p-6 flex items-center justify-between">
+          <div>
+            <h4 class="font-bold text-white text-base mb-1">📊 生成今日复习日报</h4>
+            <p class="text-xs text-gray-400">一键导出 Markdown 总结，清晰掌握复习节奏</p>
+          </div>
+          <button id="btn-export-report" class="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 border border-white/10 text-xs font-semibold text-white transition-all">
+            生成日报
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 考点大纲与进度 (Outline) -->
+    <section id="tab-outline" class="tab-content space-y-6 hidden">
+      <!-- 科目选择 & 搜索 -->
+      <div class="glass-panel p-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+          <div class="flex flex-wrap gap-2" id="outline-subject-tabs">
+            <!-- 动态科目按钮 -->
+          </div>
+          <div class="w-full md:w-72">
+            <input type="text" id="outline-search-input" placeholder="🔍 快速搜索考点关键字..." 
+              class="w-full px-3.5 py-2 rounded-xl bg-gray-900/80 border border-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-xs text-gray-100 placeholder-gray-500 outline-none">
+          </div>
+        </div>
+
+        <!-- 当前科目总进度 -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs text-gray-300">
+            <span>当前科目复习完成度</span>
+            <span class="font-mono text-indigo-400 font-bold" id="outline-progress-percent">0%</span>
+          </div>
+          <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
+            <div id="outline-progress-bar" class="bg-gradient-to-r from-indigo-500 to-cyan-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 章节列表容器 -->
+      <div id="outline-chapters-container" class="space-y-4">
+        <!-- 动态渲染章节与考点 -->
+      </div>
+    </section>
+
+    <!-- 3. 错题本 (Mistakes) -->
+    <section id="tab-mistakes" class="tab-content space-y-6 hidden">
+      <!-- 工具栏 -->
+      <div class="glass-panel p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <select id="mistake-subject-filter" class="px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none">
+            <option value="all">📚 全学科错题</option>
+            <option value="politics">🇨🇳 思想政治理论</option>
+            <option value="english">🇬🇧 考研英语</option>
+            <option value="math">📐 考研数学</option>
+            <option value="cs408">💻 计算机408/专业课</option>
+          </select>
+          <input type="text" id="mistake-search-input" placeholder="🔍 检索错题/错因/标签..." 
+            class="px-3.5 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs text-gray-200 placeholder-gray-500 outline-none w-full md:w-60">
+        </div>
+
+        <button id="btn-new-mistake" class="btn-gradient px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 w-full md:w-auto justify-center">
+          <span>➕ 记录新错题</span>
+        </button>
+      </div>
+
+      <!-- 错题卡片网格 -->
+      <div id="mistakes-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 动态渲染 -->
+      </div>
+    </section>
+
+    <!-- 4. 番茄钟专注 (Pomodoro) -->
+    <section id="tab-pomodoro" class="tab-content space-y-6 hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- 计时器主卡片 -->
+        <div class="lg:col-span-2 glass-panel p-8 flex flex-col items-center justify-center text-center">
+          <span class="text-xs px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-semibold mb-4" id="pomo-mode-title">
+            🎯 专注模式 (25分钟)
+          </span>
+
+          <!-- 环形倒计时 -->
+          <div class="relative w-60 h-60 flex items-center justify-center my-4">
+            <svg class="w-full h-full transform -rotate-90">
+              <circle cx="120" cy="120" r="90" stroke="rgba(255,255,255,0.06)" stroke-width="10" fill="transparent"/>
+              <circle id="pomo-ring-circle" class="progress-ring__circle" cx="120" cy="120" r="90" stroke="url(#gradient)" stroke-width="10" stroke-linecap="round" fill="transparent" stroke-dasharray="565.48" stroke-dashoffset="0"/>
+              <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#6366f1"/>
+                  <stop offset="100%" stop-color="#06b6d4"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span class="text-4xl font-extrabold text-white font-mono tracking-wider" id="pomo-display">25:00</span>
+              <span class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">Focusing</span>
+            </div>
+          </div>
+
+          <!-- 绑定科目与任务输入 -->
+          <div class="w-full max-w-sm flex gap-2 mb-6">
+            <select id="pomo-subject-select" class="px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none">
+              <option value="math">📐 数学</option>
+              <option value="cs408">💻 408</option>
+              <option value="english">🇬🇧 英语</option>
+              <option value="politics">🇨🇳 政治</option>
+            </select>
+            <input type="text" id="pomo-task-input" placeholder="输入当前专注的具体任务（如：刷10道高数导数题）" 
+              class="flex-1 px-3.5 py-2 rounded-xl bg-gray-900 border border-gray-700 text-xs text-gray-200 placeholder-gray-500 outline-none">
+          </div>
+
+          <!-- 计时按钮 -->
+          <div class="flex items-center gap-3">
+            <button id="pomo-btn-start" class="btn-gradient px-8 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
+              ▶ 开始专注
+            </button>
+            <button id="pomo-btn-pause" class="px-8 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-sm font-bold text-white hidden">
+              ⏸ 暂停
+            </button>
+            <button id="pomo-btn-reset" class="px-5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 border border-white/10 text-sm font-medium text-gray-300">
+              ↺ 重置
+            </button>
+          </div>
+        </div>
+
+        <!-- 近期专注日志 -->
+        <div class="glass-panel p-6">
+          <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
+            <span>📋</span> 最近专注打卡记录
+          </h4>
+          <div id="pomo-logs-list" class="space-y-2.5">
+            <!-- 动态日志 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. 统计与日报 (Analytics) -->
+    <section id="tab-analytics" class="tab-content space-y-6 hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- 打卡热力图 -->
+        <div class="lg:col-span-2 glass-panel p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-bold text-white text-sm flex items-center gap-2">
+              <span>🔥</span> 过去42天学习打卡热力图
+            </h4>
+            <div class="flex items-center gap-1.5 text-[10px] text-gray-400">
+              <span>少</span>
+              <div class="w-2.5 h-2.5 rounded-sm bg-gray-800"></div>
+              <div class="w-2.5 h-2.5 rounded-sm bg-indigo-900"></div>
+              <div class="w-2.5 h-2.5 rounded-sm bg-indigo-600"></div>
+              <div class="w-2.5 h-2.5 rounded-sm bg-indigo-400"></div>
+              <span>多</span>
+            </div>
+          </div>
+          
+          <div class="p-4 rounded-xl bg-gray-900/60 border border-white/5 overflow-x-auto">
+            <div id="heatmap-grid" class="flex flex-wrap gap-1.5">
+              <!-- 动态渲染热力方块 -->
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-3">将鼠标悬停在方块上可查看当天的专注总时长。</p>
+        </div>
+
+        <!-- 各科目学习时间分布 -->
+        <div class="glass-panel p-6">
+          <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
+            <span>⏱️</span> 各科目累计学习时长分布
+          </h4>
+          <div id="analytics-subject-bars">
+            <!-- 动态渲染时长比例 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 错题添加/编辑模态框 -->
+  <div id="modal-mistake" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="glass-panel p-6 w-full max-w-lg relative">
+      <h3 class="text-base font-bold text-white mb-4">📝 记录/编辑错题</h3>
+      <form id="form-mistake" class="space-y-3.5">
+        <input type="hidden" id="mistake-id-input">
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">科目分类</label>
+            <select id="mistake-subject-input" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200">
+              <option value="math">📐 考研数学</option>
+              <option value="cs408">💻 计算机408</option>
+              <option value="english">🇬🇧 考研英语</option>
+              <option value="politics">🇨🇳 思想政治</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">当前掌握度 (1-5星)</label>
+            <select id="mistake-mastery-input" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200">
+              <option value="1">★☆☆☆☆ (初遇坑点)</option>
+              <option value="2">★★☆☆☆ (理解概念)</option>
+              <option value="3">★★★☆☆ (掌握解法)</option>
+              <option value="4">★★★★☆ (基本熟练)</option>
+              <option value="5">★★★★★ (完全吃透)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">错题核心标题 / 考点</label>
+          <input type="text" id="mistake-title-input" required placeholder="如：洛必达与泰勒展开混用导致错误" 
+            class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">原题简述 / 关键题干</label>
+          <textarea id="mistake-question-input" rows="2" placeholder="记录题目条件、方程或问句..." 
+            class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs text-rose-400 mb-1">错因剖析 (为什么做错 / 容易掉入的思维陷阱)</label>
+          <textarea id="mistake-wrong-input" required rows="2" placeholder="分析自己为何选错或步骤卡在哪里..." 
+            class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs text-emerald-400 mb-1">正确解法 / 核心思路</label>
+          <textarea id="mistake-solution-input" required rows="3" placeholder="清晰写下破题关键、步骤或解题模板..." 
+            class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">标签 (逗号或空格分隔)</label>
+          <input type="text" id="mistake-tags-input" placeholder="如：极限计算, 泰勒展开, 高频坑点" 
+            class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="btn-cancel-mistake" class="px-4 py-2 rounded-lg bg-gray-800 text-xs text-gray-300">取消</button>
+          <button type="submit" class="btn-gradient px-5 py-2 rounded-lg text-xs font-semibold text-white">保存错题</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 复习日报模态框 -->
+  <div id="modal-report" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="glass-panel p-6 w-full max-w-xl relative">
+      <h3 class="text-base font-bold text-white mb-2">📊 考研复习日报 (Markdown 格式)</h3>
+      <p class="text-xs text-gray-400 mb-3">支持一键复制到语雀、Notion、Obsidian 或考研打卡群。</p>
+      <textarea id="report-content" rows="12" class="w-full p-3 rounded-lg bg-gray-900 border border-gray-700 text-xs font-mono text-gray-200 outline-none"></textarea>
+      <div class="flex justify-end gap-2 mt-4">
+        <button id="btn-close-report" class="px-4 py-2 rounded-lg bg-gray-800 text-xs text-gray-300">关闭</button>
+        <button id="btn-copy-report" class="btn-gradient px-5 py-2 rounded-lg text-xs font-semibold text-white">📋 复制 Markdown</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数据预设与逻辑脚本 -->
+  <script src="data/defaultOutline.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

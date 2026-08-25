@@ -1,0 +1,20 @@
+{
+  "name": "kaoyan-tracker",
+  "version": "1.0.0",
+  "description": "全栈考研备考与进度管理系统 (Kaoyan Tracker) - 考研初试倒计时 / 四科复习大纲 / 错题集 / 番茄钟打卡 / 艾宾浩斯复习热力图",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "preview": "npx serve ."
+  },
+  "keywords": [
+    "kaoyan",
+    "study-tracker",
+    "pomodoro",
+    "exam-countdown",
+    "postgraduate-exam",
+    "408"
+  ],
+  "author": "caixuf",
+  "license": "MIT"
+}
