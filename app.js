@@ -1,4 +1,4 @@
-// 考研备考与技能树管理系统 (Kaoyan-Tracker 2.0) 核心应用逻辑
+// 考研备考、技能树与开源生态系统 (Kaoyan-Tracker 2.5) 核心逻辑
 
 const MOTIVATION_QUOTES = [
   { text: "星光不问赶路人，时光不负有心人。", author: "考研寄语" },
@@ -127,6 +127,9 @@ class KaoyanApp {
       materialSubjectSelect: document.getElementById("material-subject-select"),
       materialsContainer: document.getElementById("materials-container"),
       
+      // 开源宝库
+      awesomeContainer: document.getElementById("awesome-resources-container"),
+
       // 大纲
       outlineSubjectTabs: document.getElementById("outline-subject-tabs"),
       outlineChaptersContainer: document.getElementById("outline-chapters-container"),
@@ -276,7 +279,7 @@ class KaoyanApp {
           date: new Date().toISOString().split("T")[0]
         };
         this.state.mistakes.unshift(newMistake);
-        this.addSkillExp(subject, 40); // 记录错题获得40点技能EXP
+        this.addSkillExp(subject, 40);
       }
 
       this.saveState();
@@ -341,6 +344,7 @@ class KaoyanApp {
 
     if (tabId === "skills") this.renderSkillTree();
     if (tabId === "materials") this.renderMaterials();
+    if (tabId === "awesome") this.renderAwesomeResources();
     if (tabId === "outline") this.renderOutline();
     if (tabId === "mistakes") this.renderMistakes();
     if (tabId === "pomodoro") this.renderPomodoroLogs();
@@ -381,12 +385,10 @@ class KaoyanApp {
     this.elements.targetSchoolText.innerText = this.state.targetSchool;
   }
 
-  // 增加技能经验值并自动升级
   addSkillExp(subjectId, expAmount) {
     const tree = SKILLS_DATA[subjectId];
     if (!tree) return;
     
-    // 随机或者为第一个技能增加经验
     const skill = tree.skills[0];
     if (!this.state.skills[skill.id]) {
       this.state.skills[skill.id] = { level: 1, exp: 0 };
@@ -469,7 +471,6 @@ class KaoyanApp {
     this.switchTab("outline");
   }
 
-  // 渲染技能树
   renderSkillTree() {
     let tabsHtml = "";
     Object.values(SKILLS_DATA).forEach(tree => {
@@ -537,7 +538,6 @@ class KaoyanApp {
     this.renderSkillTree();
   }
 
-  // 渲染内置知识资料库
   renderMaterials() {
     const list = STUDY_MATERIALS[this.activeMaterialSubject] || [];
     let html = "";
@@ -560,7 +560,58 @@ class KaoyanApp {
     this.elements.materialsContainer.innerHTML = html;
   }
 
-  // 渲染考点大纲
+  // 渲染开源宝藏库 (Awesome Kaoyan Hub)
+  renderAwesomeResources() {
+    const container = this.elements.awesomeContainer;
+    if (!container) return;
+
+    let html = "";
+    AWESOME_RESOURCES.forEach(cat => {
+      let cardsHtml = "";
+      cat.items.forEach(item => {
+        cardsHtml += `
+          <div class="glass-card p-5 flex flex-col justify-between hover:border-indigo-500/50">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-${cat.color}-500/10 text-${cat.color}-400 font-mono border border-${cat.color}-500/20 font-bold">
+                  ${item.stars}
+                </span>
+                <span class="text-[11px] text-gray-500 font-mono">by @${item.author}</span>
+              </div>
+              <h4 class="font-bold text-white text-sm mb-1">${item.name}</h4>
+              <p class="text-xs text-gray-300 leading-relaxed mb-3">${item.desc}</p>
+              
+              <div class="flex flex-wrap gap-1.5 mb-4">
+                ${item.tags.map(t => `<span class="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400">#${t}</span>`).join("")}
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-white/5 flex items-center justify-between">
+              <span class="text-[11px] text-gray-500 font-mono">${item.repo}</span>
+              <a href="${item.url}" target="_blank" rel="noopener noreferrer" 
+                class="px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-xs font-semibold text-indigo-300 hover:text-white border border-indigo-500/40 transition-all flex items-center gap-1">
+                <span>直达 GitHub</span> ↗
+              </a>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+        <div>
+          <h4 class="text-base font-bold text-gray-100 flex items-center gap-2 mb-3">
+            <span>${cat.categoryName}</span>
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
   renderOutline(searchKeyword = "") {
     let tabHtml = "";
     Object.values(this.state.outline).forEach(sub => {
@@ -631,7 +682,6 @@ class KaoyanApp {
     this.elements.outlineProgressPercent.innerText = `${percent}% (${subDone}/${subTotal})`;
   }
 
-  // 打开考点精讲弹窗
   openPointStudy(subjectId, pointTitle) {
     this.currentStudyingPoint = { subjectId, pointTitle };
     this.elements.studyPointTitle.innerText = pointTitle;
@@ -647,7 +697,7 @@ class KaoyanApp {
     const pt = this.state.outline[subjectId].chapters[chIdx].points[ptIdx];
     pt.done = !pt.done;
     if (pt.done) {
-      this.addSkillExp(subjectId, 20); // 掌握考点奖励 20 EXP
+      this.addSkillExp(subjectId, 20);
     }
     this.saveState();
     this.renderOutline(this.elements.outlineSearchInput.value.trim().toLowerCase());
@@ -660,7 +710,6 @@ class KaoyanApp {
     this.renderOutline(this.elements.outlineSearchInput.value.trim().toLowerCase());
   }
 
-  // 渲染错题本
   renderMistakes() {
     let filtered = this.state.mistakes;
 
@@ -769,7 +818,6 @@ class KaoyanApp {
     }
   }
 
-  // 番茄钟逻辑
   startPomodoro() {
     if (this.isTimerRunning) return;
     this.isTimerRunning = true;
@@ -792,7 +840,7 @@ class KaoyanApp {
           const today = new Date().toISOString().split("T")[0];
 
           this.state.logs.unshift({ date: today, minutes, subject, note });
-          this.addSkillExp(subject, 50); // 番茄钟完成获得 50 EXP
+          this.addSkillExp(subject, 50);
 
           this.saveState();
           this.renderPomodoroLogs();
@@ -1026,6 +1074,7 @@ class KaoyanApp {
     this.renderHeaderStats();
     this.renderSkillTree();
     this.renderMaterials();
+    this.renderAwesomeResources();
     this.renderOutline();
     this.renderMistakes();
     this.renderPomodoroLogs();

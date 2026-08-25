@@ -1,4 +1,4 @@
-// 考研全科内置精选复习知识库与速查手册 (Study Materials Library)
+// 考研全科内置精选复习知识库与速查手册 (包含全网开源精粹)
 const STUDY_MATERIALS = {
   math: [
     {
@@ -18,6 +18,41 @@ const STUDY_MATERIALS = {
 8. **arctan x** = x - x³/3 + x⁵/5 + o(x⁵)
 
 > **💡 秒杀技巧**：求 `limit (x->0) [f(x) - g(x)] / xⁿ` 时，上下展开必须展开到分子出现首个非零系数的同次幂项为止！`
+    },
+    {
+      id: "mat_integral_table",
+      title: "📐 考研高数：24个基本不定积分公式全集",
+      category: "高等数学",
+      tags: ["积分表", "计算大招", "不定积分"],
+      content: `### 核心不定积分公式速查表
+
+1. `∫ x^a dx = x^(a+1)/(a+1) + C (a ≠ -1)`
+2. `∫ 1/x dx = ln|x| + C`
+3. `∫ a^x dx = a^x / ln a + C`
+4. `∫ e^x dx = e^x + C`
+5. `∫ sin x dx = -cos x + C`
+6. `∫ cos x dx = sin x + C`
+7. `∫ sec² x dx = tan x + C`
+8. `∫ csc² x dx = -cot x + C`
+9. `∫ sec x tan x dx = sec x + C`
+10. `∫ csc x cot x dx = -csc x + C`
+11. `∫ tan x dx = -ln|cos x| + C`
+12. `∫ cot x dx = ln|sin x| + C`
+13. `∫ sec x dx = ln|sec x + tan x| + C`
+14. `∫ csc x dx = ln|csc x - cot x| + C`
+15. `∫ 1/√(a² - x²) dx = arcsin(x/a) + C`
+16. `∫ 1/(a² + x²) dx = 1/a arctan(x/a) + C`
+17. `∫ 1/(x² - a²) dx = 1/(2a) ln|(x-a)/(x+a)| + C`
+18. `∫ 1/√(x² + a²) dx = ln(x + √(x² + a²)) + C`
+19. `∫ 1/√(x² - a²) dx = ln|x + √(x² - a²)| + C`
+20. `∫ √(a² - x²) dx = x/2 √(a² - x²) + a²/2 arcsin(x/a) + C`
+21. `∫ √(x² + a²) dx = x/2 √(x² + a²) + a²/2 ln(x + √(x² + a²)) + C`
+22. `∫ √(x² - a²) dx = x/2 √(x² - a²) - a²/2 ln|x + √(x² - a²)| + C`
+
+> **🔥 换元法三大黄金代换**：
+> - 遇到 `√(a² - x²)` 令 `x = a sin t`
+> - 遇到 `√(a² + x²)` 令 `x = a tan t`
+> - 遇到 `√(x² - a²)` 令 `x = a sec t``
     },
     {
       id: "mat_infinitesimal",
