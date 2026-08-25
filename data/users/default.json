@@ -1,0 +1,118 @@
+{
+  "username": "default",
+  "examDate": "2026-12-26T08:30:00",
+  "targetSchool": "研友的目标院校 (点击修改)",
+  "lastSyncTime": "2026-08-25T13:13:29.096Z",
+  "skills": {
+    "math_limit": {
+      "level": 2,
+      "exp": 20
+    },
+    "math_integral": {
+      "level": 1,
+      "exp": 40
+    },
+    "math_diff_prove": {
+      "level": 1,
+      "exp": 30
+    },
+    "math_matrix": {
+      "level": 1,
+      "exp": 30
+    },
+    "math_prob": {
+      "level": 1,
+      "exp": 30
+    },
+    "cs_ds_algo": {
+      "level": 2,
+      "exp": 10
+    },
+    "cs_arch_pipeline": {
+      "level": 1,
+      "exp": 30
+    },
+    "cs_os_pv": {
+      "level": 1,
+      "exp": 40
+    },
+    "cs_net_tcp": {
+      "level": 1,
+      "exp": 30
+    },
+    "eng_roots": {
+      "level": 1,
+      "exp": 50
+    },
+    "eng_grammar": {
+      "level": 1,
+      "exp": 30
+    },
+    "eng_reading": {
+      "level": 1,
+      "exp": 30
+    },
+    "eng_writing": {
+      "level": 1,
+      "exp": 30
+    },
+    "pol_marx": {
+      "level": 1,
+      "exp": 30
+    },
+    "pol_history": {
+      "level": 1,
+      "exp": 30
+    },
+    "pol_xi": {
+      "level": 1,
+      "exp": 30
+    }
+  },
+  "mistakes": [
+    {
+      "id": "m-1",
+      "subject": "math",
+      "title": "洛必达法则与等价无穷小代换的误用",
+      "question": "求 limit (x->0) (x - sin x) / (x * (1 - cos x))",
+      "wrongReason": "分子直接对单项代换造成精度丢失，导致求得结果为0。",
+      "solution": "分母先等价无穷小代换 x * (1/2 * x^2) = 1/2 * x^3；分子使用泰勒展开：x - (x - x^3/6 + o(x^3)) = x^3/6。答案为 (1/6) / (1/2) = 1/3。",
+      "tags": [
+        "泰勒展开",
+        "极限计算",
+        "高数重点"
+      ],
+      "mastery": 2,
+      "date": "2026-08-25"
+    },
+    {
+      "id": "m-2",
+      "subject": "cs408",
+      "title": "快速排序最坏时间复杂度与递归深度",
+      "question": "什么情况下快速排序退化为 O(n^2)？如何优化？",
+      "wrongReason": "混淆了最好情况与最坏情况的基准选择。",
+      "solution": "当待排序序列已经基本有序或完全逆序时，每次选取的基准只能划分出长度为 0 和 n-1 的子表，递归树高度变为 n，时间复杂度退化为 O(n^2)。优化方法：三数取中法、随机选取基准法、结合插入排序。",
+      "tags": [
+        "数据结构",
+        "排序算法",
+        "复杂度分析"
+      ],
+      "mastery": 3,
+      "date": "2026-08-25"
+    }
+  ],
+  "logs": [
+    {
+      "date": "2026-08-25",
+      "minutes": 120,
+      "subject": "math",
+      "note": "完成高数第一章极限题型训练"
+    },
+    {
+      "date": "2026-08-25",
+      "minutes": 45,
+      "subject": "english",
+      "note": "背诵高频词汇与长难句拆解"
+    }
+  ]
+}

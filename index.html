@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kaoyan Tracker 3.0 - 考研全科备考、技能树与 GitHub 仓库云存储</title>
+  <title>Kaoyan Tracker 3.5 - 考研全科备考、技能树与多用户仓库云存储</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -23,7 +23,7 @@
             <h1 class="text-base font-bold bg-gradient-to-r from-white via-gray-200 to-indigo-300 bg-clip-text text-transparent">
               Kaoyan Tracker
             </h1>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30">v3.0 Git-DB</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30">v3.5 Multi-User</span>
           </div>
           <p class="text-xs text-gray-400 flex items-center gap-1 cursor-pointer group" id="target-school-display" title="点击可修改目标院校">
             <span>目标院校 & 专业</span>
@@ -60,12 +60,32 @@
         </button>
       </nav>
 
-      <!-- GitHub 仓库直连同步与备份 -->
+      <!-- 用户身份与云同步工具栏 -->
       <div class="flex items-center gap-2">
+        <!-- 用户选择切换 -->
+        <div class="relative">
+          <button id="btn-user-menu" class="px-2.5 py-1.5 rounded-lg bg-gray-800/90 hover:bg-gray-700 border border-white/10 text-xs text-gray-200 flex items-center gap-1.5 font-medium transition-all" title="切换用户或创建新档案">
+            <span class="text-indigo-400">👤</span>
+            <span id="current-user-name" class="font-mono">caixuf</span>
+            <span class="text-[10px] text-gray-400">▾</span>
+          </button>
+          <!-- 用户下拉浮层 -->
+          <div id="user-dropdown-menu" class="absolute right-0 mt-2 w-48 rounded-xl glass-panel p-2 shadow-2xl border border-white/10 hidden z-50">
+            <div class="text-[11px] text-gray-400 px-2 py-1 font-semibold border-b border-white/5 mb-1">切换用户档案</div>
+            <div id="user-list-items" class="space-y-0.5 max-h-36 overflow-y-auto"></div>
+            <div class="border-t border-white/5 mt-1 pt-1">
+              <button id="btn-create-user-modal" class="w-full text-left px-2 py-1.5 rounded-lg text-xs text-indigo-300 hover:bg-indigo-600/30 flex items-center gap-1 font-semibold transition-all">
+                <span>➕ 新建用户档案</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <button id="btn-open-github-sync" class="px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/40 text-xs text-indigo-200 hover:text-white transition-all flex items-center gap-1.5 font-semibold shadow-sm" title="配置 GitHub 仓库直连同步">
           <span>☁️ 仓库云存储</span>
           <span id="sync-indicator-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
         </button>
+
         <button id="btn-export-backup" class="hidden md:flex px-2.5 py-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 border border-white/5 text-xs text-gray-300 transition-all items-center gap-1" title="导出本地 JSON 备份文件">
           <span>💾</span>
         </button>
@@ -91,7 +111,7 @@
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
               </span>
-              2027/2026 考研初试倒计时
+              2027/2026 考研初试倒计时 · 研友专属系统
             </div>
             <h2 class="text-xl sm:text-2xl font-extrabold text-white" id="quote-text">“星光不问赶路人，时光不负有心人。”</h2>
             <p class="text-xs text-gray-400 font-medium" id="quote-author">—— 考研寄语</p>
@@ -389,6 +409,29 @@
 
   </main>
 
+  <!-- 创建新用户弹窗 -->
+  <div id="modal-create-user" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="glass-panel p-6 w-full max-w-sm relative">
+      <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2">
+        <span>👤</span> 创建新研友档案
+      </h3>
+      <div class="space-y-3 mb-4">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">用户标识 (字母/拼音/数字，如: roommate_zhang)</label>
+          <input type="text" id="new-username-input" placeholder="输入英文/数字用户名..." class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs font-mono text-gray-200 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">目标院校与专业</label>
+          <input type="text" id="new-user-school-input" placeholder="如：复旦大学 软件工程" class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-xs text-gray-200 outline-none">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button id="btn-cancel-create-user" class="px-4 py-2 rounded-lg bg-gray-800 text-xs text-gray-300">取消</button>
+        <button id="btn-confirm-create-user" class="btn-gradient px-4 py-2 rounded-lg text-xs font-bold text-white">创建档案</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 错题添加/编辑模态框 -->
   <div id="modal-mistake" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="glass-panel p-6 w-full max-w-lg relative">
@@ -498,9 +541,9 @@
       <div class="space-y-4 text-xs text-gray-300 mb-6">
         <div class="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-500/20 text-indigo-200 leading-relaxed">
           <p class="font-bold mb-1 flex items-center gap-1.5">
-            <span>✨</span> 个人专属 GitHub 仓库数据库模式
+            <span>✨</span> 多用户云存储模式：当前用户 <code id="gh-sync-user-badge" class="text-amber-300">caixuf</code>
           </p>
-          <p>您的所有考研进度、技能点、错题和打卡数据将直接 Commit 到仓库的 <code>data/userData.json</code> 中！电脑、手机、iPad 只要打开网页就能 100% 实时共享数据。</p>
+          <p>数据将保存至仓库的 <code id="gh-sync-file-path">data/users/caixuf.json</code>。不同用户的数据彼此独立，互相不冲突！</p>
         </div>
 
         <div>

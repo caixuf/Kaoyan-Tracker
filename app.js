@@ -1,4 +1,4 @@
-// 考研备考、技能树与 GitHub 仓库云存储系统 (Kaoyan-Tracker 3.0) 核心逻辑
+// 考研备考、技能树与多用户 GitHub 仓库云存储系统 (Kaoyan-Tracker 3.5) 核心逻辑
 
 const MOTIVATION_QUOTES = [
   { text: "星光不问赶路人，时光不负有心人。", author: "考研寄语" },
@@ -10,11 +10,15 @@ const MOTIVATION_QUOTES = [
 ];
 
 const DEFAULT_EXAM_DATE = "2026-12-26T08:30:00";
-const STORAGE_KEY = "kaoyan_tracker_data_v3";
+const USERS_LIST_KEY = "kaoyan_users_registry_v3";
+const ACTIVE_USER_KEY = "kaoyan_active_user_v3";
 
 class KaoyanApp {
   constructor() {
+    this.currentUser = localStorage.getItem(ACTIVE_USER_KEY) || "caixuf";
+    this.usersList = this.loadUsersList();
     this.state = this.loadState();
+    
     this.timerInterval = null;
     this.timerSeconds = 25 * 60;
     this.timerTotal = 25 * 60;
@@ -30,13 +34,31 @@ class KaoyanApp {
 
     this.initDOM();
     this.initEvents();
+    this.initUserMenu();
     this.startCountdown();
     this.initGitHubSync();
     this.render();
   }
 
-  loadState() {
-    const saved = localStorage.getItem(STORAGE_KEY);
+  loadUsersList() {
+    const list = localStorage.getItem(USERS_LIST_KEY);
+    if (list) {
+      try {
+        const parsed = JSON.parse(list);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    const defaultList = ["caixuf", "default"];
+    localStorage.setItem(USERS_LIST_KEY, JSON.stringify(defaultList));
+    return defaultList;
+  }
+
+  getStorageKey(username = this.currentUser) {
+    return "kaoyan_tracker_data_user_" + username;
+  }
+
+  loadState(username = this.currentUser) {
+    const saved = localStorage.getItem(this.getStorageKey(username));
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -46,14 +68,16 @@ class KaoyanApp {
         if (!parsed.logs) parsed.logs = [];
         if (!parsed.examDate) parsed.examDate = DEFAULT_EXAM_DATE;
         if (!parsed.targetSchool) parsed.targetSchool = "目标院校 & 专业";
+        parsed.username = username;
         return parsed;
       } catch (e) {
-        console.error("加载数据失败", e);
+        console.error("加载用户数据失败", e);
       }
     }
     return {
+      username: username,
       examDate: DEFAULT_EXAM_DATE,
-      targetSchool: "清华/北大/浙大 计算机系 (点击可修改)",
+      targetSchool: username === "caixuf" ? "清华/北大/浙大 计算机系 (点击修改)" : "目标院校与专业 (点击修改)",
       outline: JSON.parse(JSON.stringify(DEFAULT_OUTLINE)),
       skills: this.initDefaultSkills(),
       mistakes: [
@@ -67,22 +91,10 @@ class KaoyanApp {
           tags: ["泰勒展开", "极限计算", "高数重点"],
           mastery: 2,
           date: "2026-08-25"
-        },
-        {
-          id: "m-2",
-          subject: "cs408",
-          title: "快速排序最坏时间复杂度与递归深度",
-          question: "什么情况下快速排序退化为 O(n^2)？如何优化？",
-          wrongReason: "混淆了最好情况与最坏情况的基准选择。",
-          solution: "当待排序序列已经基本有序或完全逆序时，每次选取的基准只能划分出长度为 0 和 n-1 的子表，递归树高度变为 n，时间复杂度退化为 O(n^2)。优化方法：三数取中法、随机选取基准法、结合插入排序。",
-          tags: ["数据结构", "排序算法", "复杂度分析"],
-          mastery: 3,
-          date: "2026-08-25"
         }
       ],
       logs: [
-        { date: "2026-08-25", minutes: 120, subject: "math", note: "完成高数第一章极限题型训练" },
-        { date: "2026-08-25", minutes: 45, subject: "english", note: "背诵高频词汇与长难句拆解" }
+        { date: "2026-08-25", minutes: 120, subject: "math", note: "完成高数第一章极限题型训练" }
       ]
     };
   }
@@ -98,9 +110,114 @@ class KaoyanApp {
   }
 
   saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    this.state.username = this.currentUser;
+    localStorage.setItem(this.getStorageKey(), JSON.stringify(this.state));
     this.renderHeaderStats();
     this.triggerAutoSync();
+  }
+
+  // =================== 多用户管理逻辑 ===================
+
+  initUserMenu() {
+    this.renderUserDropdown();
+
+    this.elements.btnUserMenu.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.elements.userDropdownMenu.classList.toggle("hidden");
+    });
+
+    document.addEventListener("click", () => {
+      this.elements.userDropdownMenu.classList.add("hidden");
+    });
+
+    this.elements.btnCreateUserModal.addEventListener("click", () => {
+      this.elements.userDropdownMenu.classList.add("hidden");
+      this.elements.modalCreateUser.classList.remove("hidden");
+      this.elements.modalCreateUser.classList.add("flex");
+    });
+
+    this.elements.btnCancelCreateUser.addEventListener("click", () => {
+      this.elements.modalCreateUser.classList.add("hidden");
+      this.elements.modalCreateUser.classList.remove("flex");
+    });
+
+    this.elements.btnConfirmCreateUser.addEventListener("click", () => {
+      const uname = this.elements.newUsernameInput.value.trim().replace(/[^a-zA-Z0-9_-]/g, '');
+      const school = this.elements.newUserSchoolInput.value.trim();
+
+      if (!uname) {
+        alert("请输入有效的用户名称 (仅支持英文、数字与下划线)！");
+        return;
+      }
+
+      if (!this.usersList.includes(uname)) {
+        this.usersList.push(uname);
+        localStorage.setItem(USERS_LIST_KEY, JSON.stringify(this.usersList));
+      }
+
+      const newState = this.loadState(uname);
+      if (school) newState.targetSchool = school;
+      localStorage.setItem(this.getStorageKey(uname), JSON.stringify(newState));
+
+      this.elements.modalCreateUser.classList.add("hidden");
+      this.elements.modalCreateUser.classList.remove("flex");
+      this.elements.newUsernameInput.value = "";
+      this.elements.newUserSchoolInput.value = "";
+
+      this.switchUser(uname);
+    });
+  }
+
+  renderUserDropdown() {
+    this.elements.currentUserName.innerText = this.currentUser;
+    if (this.elements.ghSyncUserBadge) this.elements.ghSyncUserBadge.innerText = this.currentUser;
+    if (this.elements.ghSyncFilePath) this.elements.ghSyncFilePath.innerText = `data/users/${this.currentUser}.json`;
+
+    let html = "";
+    this.usersList.forEach(uname => {
+      const isCur = uname === this.currentUser;
+      html += `
+        <div class="flex items-center justify-between px-2 py-1.5 rounded-lg text-xs ${isCur ? 'bg-indigo-600/30 text-white font-bold' : 'text-gray-300 hover:bg-gray-800'} cursor-pointer group">
+          <span onclick="app.switchUser('${uname}')" class="flex-1 truncate">👤 ${uname}</span>
+          ${this.usersList.length > 1 && !isCur ? `<span onclick="app.deleteUser('${uname}')" class="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-300 px-1 text-[11px]" title="删除该用户">✕</span>` : ''}
+        </div>
+      `;
+    });
+    this.elements.userListItems.innerHTML = html;
+  }
+
+  switchUser(newUsername) {
+    if (!this.usersList.includes(newUsername)) {
+      this.usersList.push(newUsername);
+      localStorage.setItem(USERS_LIST_KEY, JSON.stringify(this.usersList));
+    }
+
+    this.currentUser = newUsername;
+    localStorage.setItem(ACTIVE_USER_KEY, newUsername);
+    this.state = this.loadState(newUsername);
+    
+    this.renderUserDropdown();
+    this.render();
+
+    // 重新连接 GitHub 同步该用户的数据文件
+    if (this.ghConfig && this.ghConfig.token) {
+      this.pullFromGitHub(false);
+    } else {
+      this.fetchPublicRepoData();
+    }
+  }
+
+  deleteUser(uname) {
+    if (confirm(`确定要删除用户【${uname}】的本地档案吗？`)) {
+      this.usersList = this.usersList.filter(u => u !== uname);
+      localStorage.setItem(USERS_LIST_KEY, JSON.stringify(this.usersList));
+      localStorage.removeItem(this.getStorageKey(uname));
+      if (this.currentUser === uname) {
+        this.switchUser(this.usersList[0] || "caixuf");
+      } else {
+        this.renderUserDropdown();
+      }
+    }
   }
 
   initDOM() {
@@ -108,6 +225,17 @@ class KaoyanApp {
       tabs: document.querySelectorAll(".tab-btn"),
       tabContents: document.querySelectorAll(".tab-content"),
       
+      btnUserMenu: document.getElementById("btn-user-menu"),
+      currentUserName: document.getElementById("current-user-name"),
+      userDropdownMenu: document.getElementById("user-dropdown-menu"),
+      userListItems: document.getElementById("user-list-items"),
+      btnCreateUserModal: document.getElementById("btn-create-user-modal"),
+      modalCreateUser: document.getElementById("modal-create-user"),
+      newUsernameInput: document.getElementById("new-username-input"),
+      newUserSchoolInput: document.getElementById("new-user-school-input"),
+      btnCancelCreateUser: document.getElementById("btn-cancel-create-user"),
+      btnConfirmCreateUser: document.getElementById("btn-confirm-create-user"),
+
       cdDays: document.getElementById("cd-days"),
       cdHours: document.getElementById("cd-hours"),
       cdMinutes: document.getElementById("cd-minutes"),
@@ -179,7 +307,9 @@ class KaoyanApp {
       btnPullFromGithub: document.getElementById("btn-pull-from-github"),
       ghSyncStatusText: document.getElementById("gh-sync-status-text"),
       ghLastSyncTime: document.getElementById("gh-last-sync-time"),
-      syncIndicatorDot: document.getElementById("sync-indicator-dot")
+      syncIndicatorDot: document.getElementById("sync-indicator-dot"),
+      ghSyncUserBadge: document.getElementById("gh-sync-user-badge"),
+      ghSyncFilePath: document.getElementById("gh-sync-file-path")
     };
   }
 
@@ -323,7 +453,11 @@ class KaoyanApp {
     });
   }
 
-  // =================== GitHub 仓库云存储同步核心 (Git-as-Database) ===================
+  // =================== 多用户 GitHub 仓库云存储同步核心 (Git-as-Database) ===================
+
+  getUserFilePath() {
+    return `data/users/${this.currentUser}.json`;
+  }
 
   initGitHubSync() {
     this.ghConfig = {
@@ -339,6 +473,7 @@ class KaoyanApp {
     this.updateSyncIndicator();
 
     this.elements.btnOpenGithubSync.addEventListener("click", () => {
+      this.renderUserDropdown();
       this.elements.modalGithubSync.classList.remove("hidden");
       this.elements.modalGithubSync.classList.add("flex");
     });
@@ -382,8 +517,9 @@ class KaoyanApp {
   }
 
   async fetchPublicRepoData() {
+    const userPath = this.getUserFilePath();
     try {
-      const res = await fetch("https://raw.githubusercontent.com/" + this.ghConfig.repo + "/main/data/userData.json?t=" + Date.now());
+      const res = await fetch(`https://raw.githubusercontent.com/${this.ghConfig.repo}/main/${userPath}?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.mistakes && data.skills) {
@@ -392,7 +528,7 @@ class KaoyanApp {
           this.state.mistakes = data.mistakes || this.state.mistakes;
           this.state.logs = data.logs || this.state.logs;
           this.render();
-          console.log("从 GitHub 仓库加载最新数据成功");
+          console.log(`从 GitHub 加载用户 [${this.currentUser}] 数据成功`);
         }
       }
     } catch (e) {
@@ -407,17 +543,24 @@ class KaoyanApp {
       return;
     }
 
+    const userPath = this.getUserFilePath();
     try {
-      this.elements.ghSyncStatusText.innerText = "正在从仓库拉取...";
-      const res = await fetch("https://api.github.com/repos/" + this.ghConfig.repo + "/contents/data/userData.json", {
+      this.elements.ghSyncStatusText.innerText = `正在拉取 ${this.currentUser}...`;
+      const res = await fetch(`https://api.github.com/repos/${this.ghConfig.repo}/contents/${userPath}`, {
         headers: {
-          "Authorization": "Bearer " + this.ghConfig.token,
+          "Authorization": `Bearer ${this.ghConfig.token}`,
           "Accept": "application/vnd.github.v3+json"
         }
       });
 
       if (!res.ok) {
-        throw new Error("HTTP " + res.status + ": " + res.statusText);
+        if (res.status === 404) {
+          // 该新用户在远程尚无文件，提示推送到远程
+          this.elements.ghSyncStatusText.innerText = `远程尚无此用户文件，请点击提交`;
+          if (showToast) alert(`用户【${this.currentUser}】在仓库中尚无文件，点击「立即提交到仓库」即可自动创建！`);
+          return;
+        }
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
 
       const fileData = await res.json();
@@ -434,9 +577,9 @@ class KaoyanApp {
         this.render();
 
         const timeStr = new Date().toLocaleTimeString();
-        this.elements.ghSyncStatusText.innerText = "拉取成功！已是最新";
+        this.elements.ghSyncStatusText.innerText = `[${this.currentUser}] 同步成功！`;
         this.elements.ghLastSyncTime.innerText = timeStr;
-        if (showToast) alert("🎉 成功从 GitHub 仓库同步最新考研数据！");
+        if (showToast) alert(`🎉 成功从 GitHub 仓库同步用户【${this.currentUser}】的最新考研数据！`);
       }
     } catch (err) {
       this.elements.ghSyncStatusText.innerText = "拉取失败：" + err.message;
@@ -451,23 +594,26 @@ class KaoyanApp {
       return;
     }
 
+    const userPath = this.getUserFilePath();
     try {
-      this.elements.ghSyncStatusText.innerText = "正在提交到仓库...";
+      this.elements.ghSyncStatusText.innerText = `正在提交 [${this.currentUser}] 到仓库...`;
 
-      if (!this.ghConfig.fileSha) {
-        const getRes = await fetch("https://api.github.com/repos/" + this.ghConfig.repo + "/contents/data/userData.json", {
-          headers: {
-            "Authorization": "Bearer " + this.ghConfig.token,
-            "Accept": "application/vnd.github.v3+json"
-          }
-        });
-        if (getRes.ok) {
-          const fileData = await getRes.json();
-          this.ghConfig.fileSha = fileData.sha;
+      // 获取当前用户文件的 SHA
+      let currentSha = this.ghConfig.fileSha;
+      const getRes = await fetch(`https://api.github.com/repos/${this.ghConfig.repo}/contents/${userPath}`, {
+        headers: {
+          "Authorization": `Bearer ${this.ghConfig.token}`,
+          "Accept": "application/vnd.github.v3+json"
         }
+      });
+      if (getRes.ok) {
+        const fileData = await getRes.json();
+        currentSha = fileData.sha;
+        this.ghConfig.fileSha = currentSha;
       }
 
       const payloadData = {
+        username: this.currentUser,
         examDate: this.state.examDate,
         targetSchool: this.state.targetSchool,
         lastSyncTime: new Date().toISOString(),
@@ -480,15 +626,15 @@ class KaoyanApp {
       const base64Content = btoa(unescape(encodeURIComponent(jsonString)));
 
       const body = {
-        message: "data(sync): update kaoyan study progress [" + new Date().toLocaleDateString() + "]",
+        message: `data(sync): update kaoyan progress for user [${this.currentUser}]`,
         content: base64Content,
-        sha: this.ghConfig.fileSha || undefined
+        sha: currentSha || undefined
       };
 
-      const putRes = await fetch("https://api.github.com/repos/" + this.ghConfig.repo + "/contents/data/userData.json", {
+      const putRes = await fetch(`https://api.github.com/repos/${this.ghConfig.repo}/contents/${userPath}`, {
         method: "PUT",
         headers: {
-          "Authorization": "Bearer " + this.ghConfig.token,
+          "Authorization": `Bearer ${this.ghConfig.token}`,
           "Content-Type": "application/json",
           "Accept": "application/vnd.github.v3+json"
         },
@@ -497,15 +643,15 @@ class KaoyanApp {
 
       if (!putRes.ok) {
         const errJson = await putRes.json().catch(() => ({}));
-        throw new Error(errJson.message || "HTTP " + putRes.status);
+        throw new Error(errJson.message || `HTTP ${putRes.status}`);
       }
 
       const resData = await putRes.json();
       this.ghConfig.fileSha = resData.content.sha;
       const timeStr = new Date().toLocaleTimeString();
-      this.elements.ghSyncStatusText.innerText = "提交成功 (已持久化到仓库)";
+      this.elements.ghSyncStatusText.innerText = `[${this.currentUser}] 提交成功 (已持久化)`;
       this.elements.ghLastSyncTime.innerText = timeStr;
-      if (showToast) alert("🎉 考研数据已作为新 Commit 成功持久化保存到 GitHub 仓库！");
+      if (showToast) alert(`🎉 用户【${this.currentUser}】的考研数据已成功保存到仓库 ${userPath}！`);
     } catch (err) {
       this.elements.ghSyncStatusText.innerText = "提交失败：" + err.message;
       if (showToast) alert("提交到 GitHub 仓库失败：" + err.message);
@@ -1206,6 +1352,7 @@ class KaoyanApp {
     Object.values(this.state.skills).forEach(s => totalSkillLvl += s.level);
 
     let md = `# 🎯 考研复习日报 (${today})\n\n`;
+    md += `> 用户身份：**${this.currentUser}**\n`;
     md += `> 目标院校：${this.state.targetSchool}\n`;
     md += `> 今日专注总时长：**${todayMinutes}** 分钟 (${(todayMinutes / 60).toFixed(1)} 小时)\n`;
     md += `> 考研技能树总等级：**Lv.${totalSkillLvl}**\n\n`;
@@ -1234,7 +1381,7 @@ class KaoyanApp {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `kaoyan_tracker_backup_${new Date().toISOString().split("T")[0]}.json`);
+    downloadAnchor.setAttribute("download", `kaoyan_tracker_backup_${this.currentUser}_${new Date().toISOString().split("T")[0]}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -1250,7 +1397,15 @@ class KaoyanApp {
         const parsed = JSON.parse(e.target.result);
         if (parsed.outline && parsed.mistakes) {
           this.state = parsed;
+          if (parsed.username) {
+            this.currentUser = parsed.username;
+            if (!this.usersList.includes(this.currentUser)) {
+              this.usersList.push(this.currentUser);
+              localStorage.setItem(USERS_LIST_KEY, JSON.stringify(this.usersList));
+            }
+          }
           this.saveState();
+          this.renderUserDropdown();
           this.render();
           alert("🎉 数据还原成功！");
         } else {
